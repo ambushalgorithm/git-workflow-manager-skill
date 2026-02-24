@@ -1,0 +1,6 @@
+node_modules/
+ddist/
+dist/
+build/
+coverage/
+*.log
