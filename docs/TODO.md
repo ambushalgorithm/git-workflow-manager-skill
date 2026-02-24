@@ -1,10 +1,10 @@
 # Git Workflow Manager - Implementation Plan
 
-## Overview
+**Language:** TypeScript/Node.js  
+**Port TODO:** Python  
+**Requirements Source:** [REQUIREMENTS.md](REQUIREMENTS.md)
 
-A skill for managing complex Git branching workflows across open source (fork) and closed source (internal) repositories. Handles branch lifecycle, upstream syncing, PR tracking, and automated maintenance.
-
-**Location:** `~/Projects/openclaw-skills-development/git-workflow-manager`
+> ⚠️ This TODO is derived from REQUIREMENTS.md. All features should match the requirements document.
 
 ---
 
@@ -175,11 +175,9 @@ git push --force-with-lease origin develop
 - Test commit parsing/metadata
 - Mock git commands where possible
 
-#### 6.2 E2E Tests (via openclaw-e2e-skill)
-- Spin up isolated container
-- Create test git repos (fork scenario, internal scenario)
-- Run full workflow: init → create branches → sync → PR
-- Verify branch state
+#### 6.2 E2E Tests
+- **OpenClaw repos:** Use `openclaw-e2e-skill` (spin up OpenClaw Docker container)
+- **Other repos:** Use plain Docker container with git installed (e.g., `ubuntu:22.04`)
 
 #### 6.3 Daily Report Format
 ```
@@ -289,6 +287,20 @@ git-workflow-manager/
 │   └── test-repo-setup.sh      # Script to create test repos
 └── package.json
 ```
+
+---
+
+## Python Port TODO
+
+> ⚠️ After completing TypeScript implementation, port to Python using REQUIREMENTS.md as source of truth.
+
+When porting to Python:
+- [ ] Create `pyproject.toml` with dependencies
+- [ ] Implement all CLI commands in Python
+- [ ] Use `GitPython` for Git operations
+- [ ] Create Python-specific unit tests
+- [ ] Create Python E2E test setup
+- [ ] Document in README with pip install instructions
 
 ---
 
