@@ -1,5 +1,5 @@
-import { git, getCurrentBranch, fetchAll, getBranches } from './git.js';
-import type { WorkflowConfig } from '../types.js';
+import { git, getCurrentBranch, fetchAll, getBranches } from './git';
+import type { WorkflowConfig } from '../types';
 
 export type RebaseAction = 'rebase' | 'abort' | 'continue' | 'skip';
 

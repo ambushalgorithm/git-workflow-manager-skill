@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander'
-import { initWorkflow, detectRepoType, loadConfig } from './lib/repo.js'
-import { syncStaging, syncDevelop, syncAll } from './lib/sync.js'
-import { createFeatureBranch, createHotfixBranch, createReleaseBranch, deleteBranch, mergeBranch } from './lib/create.js'
-import { rebaseOnto } from './lib/rebase.js'
+import { initWorkflow, detectRepoType, loadConfig } from './lib/repo'
+import { syncStaging, syncDevelop, syncAll } from './lib/sync'
+import { createFeatureBranch, createHotfixBranch, createReleaseBranch, deleteBranch, mergeBranch } from './lib/create'
+import { rebaseOnto } from './lib/rebase'
 
 const program = new Command()
 

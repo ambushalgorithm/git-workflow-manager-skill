@@ -355,6 +355,32 @@ When porting to Python:
 
 ## Testing
 
+### Running Tests on QA1
+
+Unit tests are CPU-intensive. Run them on QA1 server instead of local machine.
+
+**Full workflow:**
+
+1. **Check if repo exists on QA1:**
+   ```bash
+   ssh deploy@100.75.20.121 "ls ~/Projects/openclaw-skills-development/git-workflow-manager"
+   ```
+   - If missing: clone from `git@github.com-ambushalgorithm:ambushalgorithm/git-workflow-manager-skill.git`
+
+2. **Commit & push local changes** (from this machine)
+
+3. **On QA1:**
+   ```bash
+   cd ~/Projects/openclaw-skills-development/git-workflow-manager
+   git pull
+   npm install
+   npm test -- --coverage
+   ```
+
+4. **Review coverage** - Must hit >= 95%
+
+### Manual E2E Testing
+
 Create a test repository to verify functionality:
 
 1. **Create test repo:** `Git Workflow Manager Test Repo` on GitHub (under ambushalgorithm account)

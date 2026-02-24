@@ -1,5 +1,5 @@
-import { git, getCurrentBranch, getBranches, branchExists, pushBranch, fetchAll } from './git.js';
-import type { WorkflowConfig } from '../types.js';
+import { git, getCurrentBranch, getBranches, branchExists, pushBranch, fetchAll } from './git';
+import type { WorkflowConfig } from '../types';
 
 /**
  * Sync staging branch - rebase onto master

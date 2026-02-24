@@ -1,5 +1,5 @@
-import { git, branchExists, getCurrentBranch } from './git.js';
-import type { WorkflowConfig } from '../types.js';
+import { git, branchExists, getCurrentBranch } from './git';
+import type { WorkflowConfig } from '../types';
 
 /**
  * Create a feature branch from develop
