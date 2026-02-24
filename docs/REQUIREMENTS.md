@@ -42,6 +42,7 @@ A universal Git workflow management tool for AI agents. Handles complex branchin
 | [REQUIREMENTS-CLI.md](REQUIREMENTS-CLI.md) | CLI commands + data structures |
 | [REQUIREMENTS-TESTING.md](REQUIREMENTS-TESTING.md) | Testing requirements |
 | [REQUIREMENTS-PORTING.md](REQUIREMENTS-PORTING.md) | Porting notes + future |
+| [requirements/](requirements/INDEX.md) | Detailed function signatures + acceptance criteria |
 
 ---
 
