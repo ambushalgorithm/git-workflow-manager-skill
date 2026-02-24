@@ -353,6 +353,24 @@ When porting to Python:
 
 ---
 
+## Testing
+
+Create a test repository to verify functionality:
+
+1. **Create test repo:** `Git Workflow Manager Test Repo` on GitHub (under ambushalgorithm account)
+2. **Test fork workflow:**
+   - Fork the test repo to simulate open source workflow
+   - Run Phase 1: detect repo type, create branch hierarchy
+   - Verify branches created correctly
+3. **Test internal workflow:**
+   - Clone directly (no fork) to simulate closed source
+   - Run Phase 1: detect repo type, create branch hierarchy
+   - Verify branches created correctly
+4. **Test sync operations:** Verify rebasing works between branches
+5. **Test PR flow:** Verify cherry-pick to integration branch works
+
+---
+
 ## Open Questions / Blockers
 
 1. [ ] How to handle multiple upstreams? (rare but possible)
