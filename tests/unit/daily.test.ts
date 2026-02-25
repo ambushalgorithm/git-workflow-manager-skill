@@ -252,3 +252,92 @@ describe('Daily Automation', () => {
     });
   });
 });
+describe('Stale Branches Detection', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should get remote URL for repo', async () => {
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('remote.origin.url')
+      .mockResolvedValueOnce('test-repo');
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({ repoType: 'internal' });
+    (gitModule.git as jest.Mock).mockResolvedValue('feat/test 2024-01-01');
+    
+    const report = await generateDailyReport();
+    expect(report.repo).toBe('test-repo');
+  });
+
+  it('should handle branches without upstream', async () => {
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('origin')
+      .mockResolvedValueOnce('test-repo');
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({ repoType: 'internal' });
+    // getBranchStatus - for-each-ref
+    (gitModule.git as jest.Mock).mockResolvedValue('');
+    
+    const report = await generateDailyReport();
+    expect(report.branchStatus).toEqual([]);
+  });
+
+  it('should format report with no PRs', () => {
+    const report = {
+      repo: 'test',
+      type: 'internal' as const,
+      date: '2024-01-01',
+      branchStatus: [],
+      prStatus: [],
+      blockers: { conflicts: [], failedChecks: [], staleBranches: [] },
+      attention: [],
+    };
+    
+    const formatted = formatDailyReport(report);
+    expect(formatted).toContain('No open PRs');
+  });
+
+  it('should format report with stale branches', () => {
+    const report = {
+      repo: 'test',
+      type: 'internal' as const,
+      date: '2024-01-01',
+      branchStatus: [],
+      prStatus: [],
+      blockers: { conflicts: [], failedChecks: [], staleBranches: ['feat/old', 'feat/older'] },
+      attention: [],
+    };
+    
+    const formatted = formatDailyReport(report);
+    expect(formatted).toContain('Stale branches');
+  });
+
+  it('should format report with blocked PRs', () => {
+    const report = {
+      repo: 'test',
+      type: 'internal' as const,
+      date: '2024-01-01',
+      branchStatus: [],
+      prStatus: [],
+      blockers: { conflicts: [], failedChecks: ['PR #1: Test'], staleBranches: [] },
+      attention: [],
+    };
+    
+    const formatted = formatDailyReport(report);
+    expect(formatted).toContain('Failed checks');
+  });
+
+  it('should handle checkUpstreamStatus with upstream but no gh', async () => {
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({
+      defaultBranch: 'main',
+      upstreamRemote: 'upstream'
+    });
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('100')
+      .mockResolvedValueOnce('105');
+    
+    // gh not available
+    (gitModule.git as jest.Mock).mockRejectedValue(new Error('no gh'));
+    
+    const status = await checkUpstreamStatus();
+    expect(status.newCommits).toBe(5);
+  });
+});
