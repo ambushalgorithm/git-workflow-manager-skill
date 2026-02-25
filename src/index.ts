@@ -6,6 +6,7 @@ import { syncStaging, syncDevelop, syncAll } from './lib/sync'
 import { createFeatureBranch, createHotfixBranch, createReleaseBranch, deleteBranch, mergeBranch } from './lib/create'
 import { rebaseOnto } from './lib/rebase'
 import { tagCommit, listPRReadyCommits, listInternalOnlyCommits, listAllTrackedCommits, showStagingIntegrationDiff, removeCommitFromTracking, getCommitInfo } from './lib/commits'
+import { runDailyCheck, generateDailyReport, formatDailyReport, listOpenPRs, checkUpstreamStatus, reportBlockers, showBranchesNeedingAttention, detectNewUpstreamCommits } from './lib/daily'
 
 const program = new Command()
 
@@ -302,6 +303,103 @@ program
     try {
       const diff = await showStagingIntegrationDiff()
       console.log(diff)
+    } catch (error: any) {
+      console.error('Error:', error.message)
+      process.exit(1)
+    }
+  })
+
+// Daily PR Status Check commands
+program
+  .command('daily')
+  .description('Run daily check and generate report')
+  .action(async () => {
+    try {
+      const report = await runDailyCheck()
+      console.log(formatDailyReport(report))
+    } catch (error: any) {
+      console.error('Daily check failed:', error.message)
+      process.exit(1)
+    }
+  })
+
+program
+  .command('prs')
+  .description('List open pull requests')
+  .action(async () => {
+    try {
+      const prs = await listOpenPRs()
+      console.log('=== Open PRs ===')
+      if (prs.length === 0) {
+        console.log('No open PRs found.')
+      } else {
+        for (const pr of prs) {
+          const checks = pr.checksPassing ? '✅' : '❌'
+          console.log(`#${pr.number}: ${pr.title} (${pr.baseBranch}) ${checks}`)
+          console.log(`   ${pr.url}`)
+        }
+      }
+    } catch (error: any) {
+      console.error('Error:', error.message)
+      process.exit(1)
+    }
+  })
+
+program
+  .command('upstream')
+  .description('Check upstream status (for forks)')
+  .action(async () => {
+    try {
+      const status = await checkUpstreamStatus()
+      console.log('=== Upstream Status ===')
+      console.log(`New commits: ${status.newCommits}`)
+      console.log(`New PRs: ${status.newPRs.length}`)
+      console.log(`Merged PRs: ${status.mergedPRs.length}`)
+    } catch (error: any) {
+      console.error('Error:', error.message)
+      process.exit(1)
+    }
+  })
+
+program
+  .command('blockers')
+  .description('Show blockers')
+  .action(async () => {
+    try {
+      const blockers = await reportBlockers()
+      console.log('=== Blockers ===')
+      
+      if (blockers.staleBranches.length > 0) {
+        console.log('Stale branches:', blockers.staleBranches.join(', '))
+      }
+      if (blockers.failedChecks.length > 0) {
+        console.log('Failed checks:')
+        blockers.failedChecks.forEach(check => console.log(`  - ${check}`))
+      }
+      if (blockers.staleBranches.length === 0 && blockers.failedChecks.length === 0) {
+        console.log('No blockers found.')
+      }
+    } catch (error: any) {
+      console.error('Error:', error.message)
+      process.exit(1)
+    }
+  })
+
+program
+  .command('attention')
+  .description('Show branches needing attention')
+  .action(async () => {
+    try {
+      const attention = await showBranchesNeedingAttention()
+      console.log('=== Branches Needing Attention ===')
+      if (attention.length === 0) {
+        console.log('All branches up to date.')
+      } else {
+        for (const item of attention) {
+          console.log(`${item.branch}: ${item.reason}`)
+          console.log(`  → ${item.action}`)
+        }
+      }
     } catch (error: any) {
       console.error('Error:', error.message)
       process.exit(1)
