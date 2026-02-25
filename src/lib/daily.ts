@@ -101,7 +101,7 @@ export async function listOpenPRs(): Promise<PRInfo[]> {
     return prs.map((pr: any) => ({
       number: pr.number,
       title: pr.title,
-      state: pr.state as 'open' | 'merged' | 'closed',
+      state: pr.state.toLowerCase() as 'open' | 'merged' | 'closed',
       headBranch: pr.headRefName,
       baseBranch: pr.baseRefName,
       url: pr.url,
