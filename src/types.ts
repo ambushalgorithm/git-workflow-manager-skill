@@ -1,5 +1,18 @@
 export type RepoType = 'fork' | 'internal'
 
+export interface CommitMetadata {
+  hash: string
+  status: 'pr-ready' | 'internal-only' | 'pending'
+  message: string
+  upstreamPr?: number
+  tags: string[]
+  createdAt: string
+}
+
+export interface TrackingConfig {
+  commits: CommitMetadata[]
+}
+
 export interface WorkflowConfig {
   repoType: RepoType
   defaultBranch: string
@@ -10,6 +23,7 @@ export interface WorkflowConfig {
     hotfix: string
     release: string
   }
+  tracking?: TrackingConfig
 }
 
 export interface BranchHierarchy {
