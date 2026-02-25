@@ -27,10 +27,10 @@ echo "Installing git-workflow-manager..."
 cd /app
 npm link
 
-# Test init command
+# Test init command (auto-detect)
 cd "$TEST_DIR"
 echo "Testing 'git-workflow init'..."
-git-workflow init --type internal
+git-workflow init
 
 # Test branch creation
 echo "Testing 'git-workflow create'..."
