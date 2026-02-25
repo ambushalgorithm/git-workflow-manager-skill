@@ -318,3 +318,52 @@ describe('Empty Config Cases', () => {
     expect(repoModule.saveConfig).not.toHaveBeenCalled();
   });
 });
+
+describe('tagCommit additional cases', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('tagCommit should work when tracking does not exist', async () => {
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('') // cat-file
+      .mockResolvedValueOnce('test commit');
+    
+    const config = {
+      repoType: 'internal',
+      defaultBranch: 'master',
+      createdAt: new Date().toISOString(),
+      branchPrefixes: { feature: 'feat/', hotfix: 'hotfix/', release: 'release/' }
+      // no tracking property
+    };
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue(config);
+    (repoModule.saveConfig as jest.Mock).mockResolvedValue(undefined);
+
+    await tagCommit('abc123def', 'pending');
+
+    expect(repoModule.saveConfig).toHaveBeenCalled();
+    const saved = (repoModule.saveConfig as jest.Mock).mock.calls[0][0];
+    expect(saved.tracking).toBeDefined();
+    expect(saved.tracking.commits).toHaveLength(1);
+  });
+
+  it('tagCommit should work when tracking.commits does not exist', async () => {
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('') // cat-file
+      .mockResolvedValueOnce('test commit');
+    
+    const config = {
+      repoType: 'internal',
+      defaultBranch: 'master',
+      createdAt: new Date().toISOString(),
+      branchPrefixes: { feature: 'feat/', hotfix: 'hotfix/', release: 'release/' },
+      tracking: {}  // tracking exists but no commits
+    };
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue(config);
+    (repoModule.saveConfig as jest.Mock).mockResolvedValue(undefined);
+
+    await tagCommit('abc123def', 'internal-only');
+
+    expect(repoModule.saveConfig).toHaveBeenCalled();
+  });
+});

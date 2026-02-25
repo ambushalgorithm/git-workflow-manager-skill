@@ -175,3 +175,29 @@ describe('Sync Operations', () => {
     });
   });
 });
+describe('Additional Sync Coverage', () => {
+  const createConfig = () => ({
+    repoType: 'internal' as const,
+    defaultBranch: 'master',
+    createdAt: new Date().toISOString(),
+    branchPrefixes: { feature: 'feat/', hotfix: 'hotfix/', release: 'release/' }
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('syncDevelop should skip checkout when already on develop', async () => {
+    const config = createConfig();
+    
+    (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('develop');
+    (gitModule.fetchAll as jest.Mock).mockResolvedValue(undefined);
+    (gitModule.git as jest.Mock).mockResolvedValue('');
+    (gitModule.pushBranch as jest.Mock).mockResolvedValue(undefined);
+
+    await syncDevelop(config);
+
+    const checkoutCalls = (gitModule.git as jest.Mock).mock.calls.filter(call => call[0][0] === 'checkout');
+    expect(checkoutCalls).toHaveLength(0);
+  });
+});
