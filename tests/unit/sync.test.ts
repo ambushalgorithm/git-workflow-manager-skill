@@ -353,3 +353,22 @@ describe('Rebase Conflict Handling', () => {
     await expect(syncDevelop(config)).rejects.toThrow('CONFLICT');
   });
 });
+
+describe('isInRebase Edge Cases', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.resetModules();
+  });
+
+  it('isInRebase returns false when execSync throws', async () => {
+    jest.doMock('child_process', () => ({
+      execSync: jest.fn().mockImplementation(() => {
+        throw new Error('git not found');
+      })
+    }));
+    
+    const { isInRebase } = await import('../../src/lib/sync');
+    const result = await isInRebase();
+    expect(result).toBe(false);
+  });
+});
