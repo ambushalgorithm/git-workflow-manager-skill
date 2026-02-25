@@ -137,7 +137,7 @@ git push --force-with-lease origin develop
 
 ---
 
-### ✅ Phase 3 Complete
+### [ ] Phase 3 Complete
 - Write unit tests locally (DO NOT run locally)
 - Run unit tests and E2E tests in Docker on QA1
 - Target: ≥95% code coverage
@@ -167,7 +167,7 @@ git push --force-with-lease origin develop
 
 ---
 
-### ✅ Phase 4 Complete
+### [ ] Phase 4 Complete
 - Write unit tests locally (DO NOT run locally)
 - Run unit tests and E2E tests in Docker on QA1
 - Target: ≥95% code coverage
@@ -195,7 +195,7 @@ git push --force-with-lease origin develop
 
 ---
 
-### ✅ Phase 5 Complete
+### [ ] Phase 5 Complete
 - Write unit tests locally (DO NOT run locally)
 - Run unit tests and E2E tests in Docker on QA1
 - Target: ≥95% code coverage
@@ -240,7 +240,7 @@ BLOCKERS:
 
 ---
 
-### ✅ Phase 6 Complete
+### [ ] Phase 6 Complete
 - Write unit tests locally (DO NOT run locally)
 - Run unit tests and E2E tests in Docker on QA1
 - Target: ≥95% code coverage
