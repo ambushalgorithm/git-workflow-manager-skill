@@ -484,3 +484,55 @@ describe('More Daily Coverage', () => {
     expect(count).toBe(0); // parseInt('not-a-number') || 0 = 0
   });
 });
+
+describe('More Daily Edge Cases', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('checkUpstreamStatus should catch PR errors gracefully', async () => {
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({
+      defaultBranch: 'main',
+      upstreamRemote: 'upstream',
+      repoType: 'fork'
+    });
+    // detectNewUpstreamCommits succeeds
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('100')
+      .mockResolvedValueOnce('100');
+    // gh available
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('gh version 2.40.0')
+      // gh pr list throws
+      .mockRejectedValueOnce(new Error('API error'));
+    
+    const status = await checkUpstreamStatus();
+    // Should still return with newCommits = 0 and empty PR arrays
+    expect(status.newCommits).toBe(0);
+  });
+
+  it('getBranchStatus should skip main branches', async () => {
+    (gitModule.git as jest.Mock).mockResolvedValue('main\nmaster\ndevelop\nstaging\nintegration\nfeat/test');
+    
+    const branches = await getBranchStatus();
+    // Should filter out main/master/develop/staging/integration
+    const names = branches.map(b => b.branch);
+    expect(names).not.toContain('main');
+    expect(names).not.toContain('master');
+  });
+
+  it('reportBlockers should return stale branches', async () => {
+    // Mock branches
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('feat/old-branch')
+      // For stale detection, log date in past
+      .mockResolvedValueOnce(new Date(2020, 0, 1).toISOString());
+    
+    // No gh
+    (gitModule.git as jest.Mock).mockRejectedValue(new Error('no gh'));
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({});
+    
+    const blockers = await reportBlockers();
+    expect(blockers.staleBranches).toBeDefined();
+  });
+});
