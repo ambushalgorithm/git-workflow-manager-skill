@@ -60,6 +60,13 @@
 
 ---
 
+### ✅ Phase 1 Complete
+- Write unit tests locally (DO NOT run locally)
+- Run unit tests and E2E tests in Docker on QA1
+- Target: ≥95% code coverage
+
+---
+
 ### Phase 2: Rebase & Cherry-Pick Flows
 
 #### 2.1 Sync Staging
@@ -89,6 +96,13 @@ git push --force-with-lease origin develop
 - Merge to `staging`: `git checkout staging && git merge feat/xxx`
 
 **Reference:** Use `git log --oneline develop..HEAD` to find commits not in develop
+
+---
+
+### ✅ Phase 2 Complete
+- Write unit tests locally (DO NOT run locally)
+- Run unit tests and E2E tests in Docker on QA1
+- Target: ≥95% code coverage
 
 ---
 
@@ -123,6 +137,13 @@ git push --force-with-lease origin develop
 
 ---
 
+### ✅ Phase 3 Complete
+- Write unit tests locally (DO NOT run locally)
+- Run unit tests and E2E tests in Docker on QA1
+- Target: ≥95% code coverage
+
+---
+
 ### Phase 4: Daily PR Status Check
 
 #### 4.1 GitHub CLI Integration
@@ -146,6 +167,13 @@ git push --force-with-lease origin develop
 
 ---
 
+### ✅ Phase 4 Complete
+- Write unit tests locally (DO NOT run locally)
+- Run unit tests and E2E tests in Docker on QA1
+- Target: ≥95% code coverage
+
+---
+
 ### Phase 5: Branch Updates (Merge/Rebase Logic)
 
 #### 5.1 Detect Update Type
@@ -164,6 +192,14 @@ git push --force-with-lease origin develop
 - Offer: resolve manually, skip, or create conflict branch
 
 **Reference:** Use `git status --porcelain` to detect conflicts
+
+---
+
+### ✅ Phase 5 Complete
+- Write unit tests for all Phase 5 functions
+- Run on QA1: `docker build -t git-workflow-test . && docker run --rm git-workflow-test`
+- Target: ≥95% coverage
+- Run E2E tests for branch update/merge logic
 
 ---
 
@@ -202,6 +238,15 @@ NEEDS ATTENTION:
 BLOCKERS:
 - None
 ```
+
+---
+
+### ✅ Phase 6 Complete
+- Write unit tests for all Phase 6 functions
+- Run on QA1: `docker build -t git-workflow-test . && docker run --rm git-workflow-test`
+- Target: ≥95% coverage
+- Run FULL E2E test suite
+- Verify daily reports work correctly
 
 ---
 
