@@ -38,6 +38,7 @@ describe('Commit Tracking', () => {
     });
 
     it('should throw on invalid status', async () => {
+      // @ts-ignore - intentionally passing invalid status
       await expect(tagCommit('abc123', 'invalid')).rejects.toThrow("Invalid status");
     });
 
