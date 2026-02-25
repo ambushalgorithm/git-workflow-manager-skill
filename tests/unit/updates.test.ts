@@ -250,3 +250,112 @@ describe('Branch Updates', () => {
     });
   });
 });
+describe('Additional Updates Coverage', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('setMergeStrategy throws when no config', async () => {
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue(null);
+    
+    await expect(setMergeStrategy('rebase')).rejects.toThrow('No workflow config');
+  });
+
+  it('setMergeStrategy initializes mergeStrategy when not exists', async () => {
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({
+      repoType: 'internal', defaultBranch: 'main', createdAt: '', branchPrefixes: { feature: 'feat/', hotfix: 'hotfix/', release: 'release/' }
+    });
+    (repoModule.saveConfig as jest.Mock).mockResolvedValue(undefined);
+    
+    await setMergeStrategy('rebase');
+    
+    const saved = (repoModule.saveConfig as jest.Mock).mock.calls[0][0];
+    expect(saved.mergeStrategy.default).toBe('rebase');
+  });
+
+  it('hasConflicts returns true for AA', async () => {
+    (gitModule.git as jest.Mock).mockResolvedValue('AA file.txt');
+    const result = await hasConflicts();
+    expect(result).toBe(true);
+  });
+
+  it('hasConflicts returns true for DD', async () => {
+    (gitModule.git as jest.Mock).mockResolvedValue('DD file.txt');
+    const result = await hasConflicts();
+    expect(result).toBe(true);
+  });
+
+  it('hasConflicts handles error', async () => {
+    (gitModule.git as jest.Mock).mockRejectedValue(new Error('no git'));
+    const result = await hasConflicts();
+    expect(result).toBe(false);
+  });
+
+  it('abortOperation handles merge abort', async () => {
+    (gitModule.git as jest.Mock).mockResolvedValue('');
+    
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+    await abortOperation();
+    
+    expect(gitModule.git).toHaveBeenCalledWith(['merge', '--abort']);
+    consoleSpy.mockRestore();
+  });
+
+  it('abortOperation handles no operation', async () => {
+    (gitModule.git as jest.Mock)
+      .mockRejectedValueOnce(new Error('no merge'))
+      .mockRejectedValueOnce(new Error('no rebase'));
+    
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+    await abortOperation();
+    
+    consoleSpy.mockRestore();
+  });
+
+  it('getChildBranches handles errors gracefully', async () => {
+    (gitModule.git as jest.Mock).mockRejectedValue(new Error('git error'));
+    
+    const children = await getChildBranches('main');
+    expect(children).toEqual([]);
+  });
+
+  it('getChildBranches finds child branches', async () => {
+    // Returns a feature branch
+    (gitModule.git as jest.Mock).mockResolvedValueOnce('main\nfeat/test');
+    // merge-base succeeds
+    (gitModule.git as jest.Mock).mockResolvedValueOnce('abc123');
+    // rev-parse succeeds  
+    (gitModule.git as jest.Mock).mockResolvedValueOnce('abc123');
+    
+    const children = await getChildBranches('main');
+    expect(children).toContain('feat/test');
+  });
+
+  it('updateChildBranches updates children with rebase', async () => {
+    // Returns feature branch
+    (gitModule.git as jest.Mock).mockResolvedValueOnce('feat/test');
+    // merge-base and rev-parse succeed
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('abc123')
+      .mockResolvedValueOnce('abc123');
+    // load config with rebase strategy
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({
+      repoType: 'internal', defaultBranch: 'main', createdAt: '', branchPrefixes: { feature: 'feat/', hotfix: 'hotfix/', release: 'release/' }, mergeStrategy: { default: 'rebase' }
+    });
+    
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation();
+    
+    // rebase succeeds but git merge fails in the loop
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('') // getCurrentBranch
+      .mockResolvedValueOnce('') // rebase
+      .mockRejectedValueOnce(new Error('rebase failed'));
+    
+    await updateChildBranches('main');
+    
+    expect(consoleSpy).toHaveBeenCalled();
+    consoleSpy.mockRestore();
+    errorSpy.mockRestore();
+  });
+});
