@@ -357,6 +357,8 @@ When porting to Python:
 
 ### Running Tests on QA1
 
+**⚠️ NEVER run tests locally - always run in Docker on QA1**
+
 All tests run in Docker for isolation and consistency.
 
 **Full workflow:**
