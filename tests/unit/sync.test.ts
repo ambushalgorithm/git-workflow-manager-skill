@@ -240,3 +240,71 @@ describe('Force push', () => {
     expect(gitModule.pushBranch).toHaveBeenCalledWith('develop');
   });
 });
+
+describe('isInRebase', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.resetModules();
+  });
+
+  it('should return true when rebase in progress', async () => {
+    jest.doMock('child_process', () => ({
+      execSync: jest.fn().mockReturnValue('rebase in progress\n')
+    }));
+    
+    const { isInRebase } = await import('../../src/lib/sync');
+    const result = await isInRebase();
+    expect(result).toBe(true);
+  });
+
+  it('should return false when no rebase', async () => {
+    jest.doMock('child_process', () => ({
+      execSync: jest.fn().mockReturnValue(' M file.txt\n')
+    }));
+    
+    const { isInRebase } = await import('../../src/lib/sync');
+    const result = await isInRebase();
+    expect(result).toBe(false);
+  });
+});
+
+describe('Branch checkout scenarios', () => {
+  const createConfig = () => ({
+    repoType: 'internal' as const,
+    defaultBranch: 'master',
+    createdAt: new Date().toISOString(),
+    branchPrefixes: { feature: 'feat/', hotfix: 'hotfix/', release: 'release/' }
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('syncStaging should checkout when not on staging', async () => {
+    const config = createConfig();
+    
+    (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('develop');
+    (gitModule.fetchAll as jest.Mock).mockResolvedValue(undefined);
+    (gitModule.git as jest.Mock).mockResolvedValue('');
+    (gitModule.pushBranch as jest.Mock).mockResolvedValue(undefined);
+
+    await syncStaging(config, true);
+
+    const checkoutCalls = (gitModule.git as jest.Mock).mock.calls.filter(call => call[0][0] === 'checkout');
+    expect(checkoutCalls).toHaveLength(1);
+  });
+
+  it('syncDevelop should checkout when not on develop', async () => {
+    const config = createConfig();
+    
+    (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('main');
+    (gitModule.fetchAll as jest.Mock).mockResolvedValue(undefined);
+    (gitModule.git as jest.Mock).mockResolvedValue('');
+    (gitModule.pushBranch as jest.Mock).mockResolvedValue(undefined);
+
+    await syncDevelop(config);
+
+    const checkoutCalls = (gitModule.git as jest.Mock).mock.calls.filter(call => call[0][0] === 'checkout');
+    expect(checkoutCalls).toHaveLength(1);
+  });
+});
