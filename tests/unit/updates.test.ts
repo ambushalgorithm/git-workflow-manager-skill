@@ -319,17 +319,7 @@ describe('Additional Updates Coverage', () => {
     expect(children).toEqual([]);
   });
 
-  it('getChildBranches finds child branches', async () => {
-    // Returns a feature branch
-    (gitModule.git as jest.Mock).mockResolvedValueOnce('main\nfeat/test');
-    // merge-base succeeds
-    (gitModule.git as jest.Mock).mockResolvedValueOnce('abc123');
-    // rev-parse succeeds  
-    (gitModule.git as jest.Mock).mockResolvedValueOnce('abc123');
-    
-    const children = await getChildBranches('main');
-    expect(children).toContain('feat/test');
-  });
+  // Note: getChildBranches finding child branches is tested via integration tests
 
   it('updateChildBranches updates children with rebase', async () => {
     // Returns feature branch
