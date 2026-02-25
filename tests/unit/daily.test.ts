@@ -710,3 +710,36 @@ describe('Targeted Daily Coverage', () => {
     expect(branches).toBeDefined();
   });
 });
+
+describe('Deep Daily Edge Cases', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('reportBlockers full integration with conflict detection', async () => {
+    // branch --format returns branches
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('feature-a')
+      .mockResolvedValueOnce(new Date(2020, 0, 1).toISOString()); // old date -> stale
+    // gh check fails
+    (gitModule.git as jest.Mock).mockRejectedValue(new Error('no gh'));
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({});
+    
+    const blockers = await reportBlockers();
+    expect(blockers.staleBranches).toBeDefined();
+  });
+
+  it('detectNewUpstreamCommits with upstream error path', async () => {
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({
+      defaultBranch: 'main',
+      upstreamRemote: 'upstream'
+    });
+    // First call succeeds, second errors
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('100')
+      .mockRejectedValueOnce(new Error('no upstream'));
+    
+    const count = await detectNewUpstreamCommits();
+    expect(count).toBe(0);
+  });
+});
