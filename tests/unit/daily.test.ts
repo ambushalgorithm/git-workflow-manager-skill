@@ -536,3 +536,42 @@ describe('More Daily Edge Cases', () => {
     expect(blockers.staleBranches).toBeDefined();
   });
 });
+
+describe('Direct Error Path Tests', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('listOpenPRs should handle missing mergeable field', async () => {
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('gh version 2.40.0')
+      .mockResolvedValueOnce(JSON.stringify([
+        { number: 1, title: 'Test PR', state: 'OPEN', headRefName: 'feat/test', baseRefName: 'main', url: 'https://github.com/test/repo/pull/1', mergeable: null, statusCheckRollup: [] }
+      ]));
+    
+    const prs = await listOpenPRs();
+    expect(prs[0].mergeable).toBe(false);
+  });
+
+  it('listOpenPRs should handle empty statusCheckRollup', async () => {
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('gh version 2.40.0')
+      .mockResolvedValueOnce(JSON.stringify([
+        { number: 1, title: 'Test PR', state: 'OPEN', headRefName: 'feat/test', baseRefName: 'main', url: 'https://github.com/test/repo/pull/1', mergeable: true, statusCheckRollup: null }
+      ]));
+    
+    const prs = await listOpenPRs();
+    expect(prs[0].checksPassing).toBe(true);
+  });
+
+  it('listOpenPRs should handle statusCheckRollup with failure', async () => {
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('gh version 2.40.0')
+      .mockResolvedValueOnce(JSON.stringify([
+        { number: 1, title: 'Test PR', state: 'OPEN', headRefName: 'feat/test', baseRefName: 'main', url: 'https://github.com/test/repo/pull/1', mergeable: true, statusCheckRollup: [{ state: 'FAILURE' }] }
+      ]));
+    
+    const prs = await listOpenPRs();
+    expect(prs[0].checksPassing).toBe(false);
+  });
+});
