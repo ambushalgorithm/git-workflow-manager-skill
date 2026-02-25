@@ -17,10 +17,22 @@ git init
 git config user.email "test@test.com"
 git config user.name "Test User"
 
+# Create a fake origin (bare repo for testing)
+mkdir -p origin.git
+cd origin.git
+git init --bare
+cd ..
+
+# Add origin remote
+git remote add origin "$TEST_DIR/origin.git"
+
 # Create initial commit
 echo "initial" > file.txt
 git add file.txt
 git commit -m "initial commit"
+
+# Push to origin
+git push -u origin master
 
 # Install git-workflow-manager
 echo "Installing git-workflow-manager..."
@@ -51,10 +63,6 @@ else
   echo "✗ Config file not found"
   exit 1
 fi
-
-# Test sync commands exist
-echo "Testing sync commands..."
-git-workflow sync staging 2>&1 || true
 
 # Test status command
 echo "Testing 'git-workflow status'..."
