@@ -308,3 +308,48 @@ describe('Branch checkout scenarios', () => {
     expect(checkoutCalls).toHaveLength(1);
   });
 });
+
+describe('Rebase Conflict Handling', () => {
+  const createConfig = () => ({
+    repoType: 'internal' as const,
+    defaultBranch: 'master',
+    createdAt: new Date().toISOString(),
+    branchPrefixes: { feature: 'feat/', hotfix: 'hotfix/', release: 'release/' }
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('syncStaging throws on rebase conflict', async () => {
+    const config = createConfig();
+    
+    (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('main');
+    (gitModule.fetchAll as jest.Mock).mockResolvedValue(undefined);
+    // First call: checkout staging
+    // Second call: rebase -> throws
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('') // checkout
+      .mockRejectedValueOnce(new Error('CONFLICT')); // rebase conflict
+    
+    (gitModule.pushBranch as jest.Mock).mockResolvedValue(undefined);
+
+    await expect(syncStaging(config)).rejects.toThrow('CONFLICT');
+  });
+
+  it('syncDevelop throws on rebase conflict', async () => {
+    const config = createConfig();
+    
+    (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('main');
+    (gitModule.fetchAll as jest.Mock).mockResolvedValue(undefined);
+    // First call: checkout develop
+    // Second call: rebase -> throws
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('') // checkout
+      .mockRejectedValueOnce(new Error('CONFLICT')); // rebase conflict
+    
+    (gitModule.pushBranch as jest.Mock).mockResolvedValue(undefined);
+
+    await expect(syncDevelop(config)).rejects.toThrow('CONFLICT');
+  });
+});
