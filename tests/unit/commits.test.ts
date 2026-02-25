@@ -264,3 +264,57 @@ describe('Remove Commit From Tracking', () => {
     expect(savedConfig.tracking.commits[0].hash).toBe('def456');
   });
 });
+
+describe('Empty Config Cases', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('listPRReadyCommits returns empty when no config', async () => {
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue(null);
+    const commits = await listPRReadyCommits();
+    expect(commits).toHaveLength(0);
+  });
+
+  it('listInternalOnlyCommits returns empty when no config', async () => {
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue(null);
+    const commits = await listInternalOnlyCommits();
+    expect(commits).toHaveLength(0);
+  });
+
+  it('listAllTrackedCommits returns empty when no config', async () => {
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue(null);
+    const commits = await listAllTrackedCommits();
+    expect(commits).toHaveLength(0);
+  });
+
+  it('listAllTrackedCommits returns empty when no tracking', async () => {
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({});
+    const commits = await listAllTrackedCommits();
+    expect(commits).toHaveLength(0);
+  });
+
+  it('getCommitInfo returns null when no config', async () => {
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue(null);
+    const info = await getCommitInfo('abc123');
+    expect(info).toBeNull();
+  });
+
+  it('getCommitInfo returns null when no tracking', async () => {
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({});
+    const info = await getCommitInfo('abc123');
+    expect(info).toBeNull();
+  });
+
+  it('removeCommitFromTracking returns when no config', async () => {
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue(null);
+    await removeCommitFromTracking('abc123');
+    expect(repoModule.saveConfig).not.toHaveBeenCalled();
+  });
+
+  it('removeCommitFromTracking returns when no tracking', async () => {
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({});
+    await removeCommitFromTracking('abc123');
+    expect(repoModule.saveConfig).not.toHaveBeenCalled();
+  });
+});
