@@ -318,3 +318,101 @@ describe('Stale Branches Detection', () => {
     expect(status.newCommits).toBe(5);
   });
 });
+
+describe('Additional Daily Coverage', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('listOpenPRs should handle gh errors', async () => {
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('gh version 2.40.0')
+      .mockRejectedValueOnce(new Error('not a git repo'));
+    
+    await expect(listOpenPRs()).rejects.toThrow('not a git repo');
+  });
+
+  it('getPRDetails should handle error', async () => {
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('gh version 2.40.0')
+      .mockRejectedValueOnce(new Error('not found'));
+    
+    const details = await getPRDetails(999);
+    expect(details).toBeNull();
+  });
+
+  it('checkPRMerged should handle error', async () => {
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('gh version 2.40.0')
+      .mockRejectedValueOnce(new Error('not found'));
+    
+    const merged = await checkPRMerged(999);
+    expect(merged).toBe(false);
+  });
+
+  it('detectNewUpstreamCommits should handle error', async () => {
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({
+      defaultBranch: 'main',
+      upstreamRemote: 'upstream'
+    });
+    (gitModule.git as jest.Mock).mockRejectedValueOnce(new Error('no upstream'));
+    
+    const count = await detectNewUpstreamCommits();
+    expect(count).toBe(0);
+  });
+
+  it('checkUpstreamStatus should handle upstream errors', async () => {
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({
+      defaultBranch: 'main',
+      upstreamRemote: 'upstream'
+    });
+    // gh not available for PR check
+    (gitModule.git as jest.Mock).mockRejectedValue(new Error('no gh'));
+    
+    const status = await checkUpstreamStatus();
+    expect(status).toBeDefined();
+    expect(status.newPRs).toHaveLength(0);
+  });
+
+  it('generateDailyReport should handle errors gracefully', async () => {
+    (gitModule.git as jest.Mock).mockRejectedValue(new Error('no git'));
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({ repoType: 'internal' });
+    
+    const report = await generateDailyReport();
+    expect(report.repo).toBe('unknown');
+  });
+
+  it('formatDailyReport should show all branches needing attention', () => {
+    const report = {
+      repo: 'test',
+      type: 'internal' as const,
+      date: '2024-01-01',
+      branchStatus: [],
+      prStatus: [],
+      blockers: { conflicts: [], failedChecks: [], staleBranches: [] },
+      attention: [
+        { branch: 'feat/one', reason: 'behind', action: 'rebase' },
+        { branch: 'feat/two', reason: 'ahead', action: 'push' }
+      ],
+    };
+    
+    const formatted = formatDailyReport(report);
+    expect(formatted).toContain('feat/one');
+    expect(formatted).toContain('feat/two');
+  });
+
+  it('formatDailyReport should handle no blockers', () => {
+    const report = {
+      repo: 'test',
+      type: 'internal' as const,
+      date: '2024-01-01',
+      branchStatus: [],
+      prStatus: [],
+      blockers: { conflicts: [], failedChecks: [], staleBranches: [] },
+      attention: [],
+    };
+    
+    const formatted = formatDailyReport(report);
+    expect(formatted).toContain('No blockers');
+  });
+});
