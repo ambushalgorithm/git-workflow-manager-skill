@@ -416,3 +416,71 @@ describe('Additional Daily Coverage', () => {
     expect(formatted).toContain('No blockers');
   });
 });
+
+describe('More Daily Coverage', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('getPRDetails should handle empty reviewers and labels', async () => {
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('gh version 2.40.0')
+      .mockResolvedValueOnce(JSON.stringify({
+        number: 1, title: 'Test', state: 'OPEN', headRefName: 'feat', baseRefName: 'main', 
+        url: 'http://test', mergeable: true, author: null, createdAt: '2024-01-01', 
+        updatedAt: '2024-01-02', reviewers: null, labels: null, isDraft: null
+      }));
+    
+    const details = await getPRDetails(1);
+    expect(details?.reviewers).toEqual([]);
+    expect(details?.labels).toEqual([]);
+    expect(details?.isDraft).toBe(false);
+  });
+
+  it('checkUpstreamStatus should return empty when no config', async () => {
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue(null);
+    
+    const status = await checkUpstreamStatus();
+    expect(status.newCommits).toBe(0);
+    expect(status.mergedPRs).toHaveLength(0);
+    expect(status.newPRs).toHaveLength(0);
+  });
+
+  it('getBranchStatus should handle branch with upstream', async () => {
+    (gitModule.git as jest.Mock).mockResolvedValue('feat/test 2024-01-01 origin/feat/test\n');
+    // mock rev-list for ahead/behind
+    (gitModule.git as jest.Mock).mockResolvedValueOnce('3  5');
+    
+    const branches = await getBranchStatus();
+    expect(branches).toBeDefined();
+  });
+
+  it('reportBlockers should handle errors gracefully', async () => {
+    // gh not available
+    (gitModule.git as jest.Mock).mockRejectedValue(new Error('no gh'));
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({});
+    
+    const blockers = await reportBlockers();
+    expect(blockers.failedChecks).toHaveLength(0);
+  });
+
+  it('detectNewUpstreamCommits returns 0 when no upstream', async () => {
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({});
+    
+    const count = await detectNewUpstreamCommits();
+    expect(count).toBe(0);
+  });
+
+  it('detectNewUpstreamCommits handles parse error', async () => {
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({
+      defaultBranch: 'main',
+      upstreamRemote: 'upstream'
+    });
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('not-a-number')
+      .mockResolvedValueOnce('also-not-a-number');
+    
+    const count = await detectNewUpstreamCommits();
+    expect(count).toBe(0);
+  });
+});
