@@ -1,5 +1,12 @@
 export type RepoType = 'fork' | 'internal'
 
+export type MergeStrategy = 'rebase' | 'merge'
+
+export interface MergeStrategyConfig {
+  default: MergeStrategy
+  perBranch?: Record<string, MergeStrategy>
+}
+
 export interface CommitMetadata {
   hash: string
   status: 'pr-ready' | 'internal-only' | 'pending'
@@ -24,6 +31,7 @@ export interface WorkflowConfig {
     release: string
   }
   tracking?: TrackingConfig
+  mergeStrategy?: MergeStrategyConfig
 }
 
 export interface BranchHierarchy {

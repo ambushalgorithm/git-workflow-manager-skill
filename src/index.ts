@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander'
+import { git, getCurrentBranch, branchExists } from './lib/git'
 import { initWorkflow, detectRepoType, loadConfig } from './lib/repo'
 import { syncStaging, syncDevelop, syncAll } from './lib/sync'
 import { createFeatureBranch, createHotfixBranch, createReleaseBranch, deleteBranch, mergeBranch } from './lib/create'
 import { rebaseOnto } from './lib/rebase'
 import { tagCommit, listPRReadyCommits, listInternalOnlyCommits, listAllTrackedCommits, showStagingIntegrationDiff, removeCommitFromTracking, getCommitInfo } from './lib/commits'
 import { runDailyCheck, generateDailyReport, formatDailyReport, listOpenPRs, checkUpstreamStatus, reportBlockers, showBranchesNeedingAttention, detectNewUpstreamCommits } from './lib/daily'
+import { getMergeStrategy, setMergeStrategy, rebaseBranch, mergeBranchInto, hasConflicts, abortOperation, getBranchUpdateType, smartUpdate, fastForward, updateChildBranches } from './lib/updates'
 
 const program = new Command()
 
@@ -400,6 +402,125 @@ program
           console.log(`  → ${item.action}`)
         }
       }
+    } catch (error: any) {
+      console.error('Error:', error.message)
+      process.exit(1)
+    }
+  })
+
+// Branch update commands
+program
+  .command('strategy')
+  .description('Set or show merge strategy')
+  .argument('[action]', 'Action: get, set', 'get')
+  .argument('[strategy]', 'Strategy: rebase, merge (for set action)')
+  .argument('[branch]', 'Branch name (optional, for branch-specific strategy)')
+  .action(async (action, strategy, branch) => {
+    try {
+      if (action === 'set') {
+        if (!strategy || (strategy !== 'rebase' && strategy !== 'merge')) {
+          console.error('Error: Strategy must be "rebase" or "merge"')
+          process.exit(1)
+        }
+        await setMergeStrategy(strategy as 'rebase' | 'merge', branch)
+      } else {
+        const config = await loadConfig()
+        if (!config) {
+          console.error('Error: Not initialized')
+          process.exit(1)
+        }
+        const s = config.mergeStrategy?.default || 'merge'
+        console.log(`Default merge strategy: ${s}`)
+        if (config.mergeStrategy?.perBranch) {
+          console.log('Branch-specific strategies:')
+          for (const [b, strat] of Object.entries(config.mergeStrategy.perBranch)) {
+            console.log(`  ${b}: ${strat}`)
+          }
+        }
+      }
+    } catch (error: any) {
+      console.error('Error:', error.message)
+      process.exit(1)
+    }
+  })
+
+program
+  .command('update')
+  .description('Update branch to latest (uses strategy)')
+  .argument('<branch>', 'Branch to update')
+  .argument('[onto]', 'Branch to update onto', 'main')
+  .action(async (branch, onto) => {
+    try {
+      const config = await loadConfig()
+      if (!config) {
+        console.error('Error: Not initialized')
+        process.exit(1)
+      }
+      
+      const strat = getMergeStrategy(config, branch)
+      console.log(`Using ${strat} strategy to update ${branch} onto ${onto}`)
+      
+      await smartUpdate(branch, onto)
+      console.log('Update complete')
+    } catch (error: any) {
+      console.error('Update failed:', error.message)
+      process.exit(1)
+    }
+  })
+
+program
+  .command('status-branch')
+  .description('Show branch sync status')
+  .argument('[branch]', 'Branch to check', 'current')
+  .action(async (branch) => {
+    try {
+      const currentBranch = await getCurrentBranch()
+      const targetBranch = branch === 'current' ? currentBranch : branch
+      
+      const status = await getBranchUpdateType(targetBranch)
+      console.log(`Branch: ${targetBranch}`)
+      
+      switch (status.type) {
+        case 'ahead':
+          console.log(`Status: ${status.ahead} commit(s) ahead of remote`)
+          break
+        case 'behind':
+          console.log(`Status: ${status.behind} commit(s) behind remote`)
+          break
+        case 'diverged':
+          console.log(`Status: Diverged - ${status.ahead} ahead, ${status.behind} behind`)
+          break
+        case 'up-to-date':
+          console.log('Status: Up to date with remote')
+          break
+      }
+    } catch (error: unknown) {
+      console.error('Error:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
+program
+  .command('ff')
+  .description('Fast-forward branch to target')
+  .argument('<branch>', 'Branch to fast-forward')
+  .argument('<to>', 'Target branch')
+  .action(async (branch, to) => {
+    try {
+      await fastForward(branch, to)
+    } catch (error: any) {
+      console.error('Error:', error.message)
+      process.exit(1)
+    }
+  })
+
+program
+  .command('update-children')
+  .description('Update child branches after parent merge')
+  .argument('<baseBranch>', 'Base branch that was merged')
+  .action(async (baseBranch) => {
+    try {
+      await updateChildBranches(baseBranch)
     } catch (error: any) {
       console.error('Error:', error.message)
       process.exit(1)
