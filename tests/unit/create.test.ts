@@ -109,3 +109,44 @@ describe('Branch Creation', () => {
     });
   });
 });
+
+describe('Create Branch Error Paths', () => {
+  const createConfig = () => ({
+    repoType: 'internal' as const,
+    defaultBranch: 'master',
+    createdAt: new Date().toISOString(),
+    branchPrefixes: { feature: 'feat/', hotfix: 'hotfix/', release: 'release/' }
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('createHotfixBranch throws when staging does not exist', async () => {
+    const config = createConfig();
+    (gitModule.branchExists as jest.Mock).mockResolvedValue(false);
+
+    await expect(createHotfixBranch(config, 'hotfix/new')).rejects.toThrow("Parent branch 'staging' does not exist");
+  });
+
+  it('createHotfixBranch throws when branch already exists', async () => {
+    const config = createConfig();
+    (gitModule.branchExists as jest.Mock).mockResolvedValue(true);
+
+    await expect(createHotfixBranch(config, 'hotfix/existing')).rejects.toThrow("Branch 'hotfix/existing' already exists");
+  });
+
+  it('createReleaseBranch throws when develop does not exist', async () => {
+    const config = createConfig();
+    (gitModule.branchExists as jest.Mock).mockResolvedValue(false);
+
+    await expect(createReleaseBranch(config, 'release/1.0')).rejects.toThrow("Parent branch 'develop' does not exist");
+  });
+
+  it('createReleaseBranch throws when branch already exists', async () => {
+    const config = createConfig();
+    (gitModule.branchExists as jest.Mock).mockResolvedValue(true);
+
+    await expect(createReleaseBranch(config, 'release/existing')).rejects.toThrow("Branch 'release/existing' already exists");
+  });
+});
