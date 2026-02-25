@@ -48,18 +48,36 @@ git-workflow status
 
 ## Branch Hierarchy
 
-### Internal Repos
+### Open Source (Fork)
 ```
-master → staging → integration → develop
-                   ↓
-              feature/* (from develop)
+upstream/master
+        ↑
+origin/master            ← synced with upstream
+        ↑
+origin/staging           ← ALL changes (PR'd + non-PR'd)
+        ↑
+origin/integration       ← PR-ready subset
+        ↑
+origin/develop           ← rebased working base
+        ↑
+origin/release/x.x.x
+origin/hotfix/*
+origin/feat/*
 ```
 
-### Fork Repos
+### Closed Source (Internal)
 ```
-upstream/master → master → staging → integration → develop
-                                        ↓
-                                   feature/*
+     master
+        ↑
+     staging        ← ALL changes
+        ↑
+     integration    ← PR-ready
+        ↑
+     develop        ← rebased working base
+        ↑
+     release/x.x.x
+     hotfix/*
+     feat/*
 ```
 
 ## Commands
@@ -68,7 +86,7 @@ upstream/master → master → staging → integration → develop
 | Command | Description |
 |---------|-------------|
 | `git-workflow init` | Auto-detect and setup workflow |
-| `git-workflow config` | Show current configuration |
+| `git-workflow detect` | Detect repository type (fork or internal) |
 
 ### Branch Operations
 | Command | Description |
@@ -76,32 +94,29 @@ upstream/master → master → staging → integration → develop
 | `git-workflow create feat <name>` | Create feature branch |
 | `git-workflow create hotfix <name>` | Create hotfix branch |
 | `git-workflow create release <name>` | Create release branch |
-| `git-workflow delete <branch>` | Delete a branch |
-| `git-workflow merge <branch>` | Merge branch into current |
+| `git-workflow rebase [parent]` | Rebase current branch onto parent |
 
 ### Sync Operations
 | Command | Description |
 |---------|-------------|
-| `git-workflow sync staging` | Rebase staging onto master |
-| `git-workflow sync develop` | Rebase develop onto staging |
-| `git-workflow sync all` | Sync entire hierarchy |
+| `git-workflow sync [branch]` | Sync branches (staging, develop, or all) |
 
 ### Update Operations
 | Command | Description |
 |---------|-------------|
-| `git-workflow strategy get` | Show merge strategy |
-| `git-workflow strategy set rebase` | Set default to rebase |
-| `git-workflow update <branch> <onto>` | Smart update with strategy |
-| `git-workflow status-branch` | Check sync status |
+| `git-workflow strategy [action] [strategy] [branch]` | Set or show merge strategy |
+| `git-workflow update <branch> [onto]` | Smart update with strategy |
+| `git-workflow status-branch [branch]` | Check sync status |
 | `git-workflow ff <branch> <to>` | Fast-forward branch |
+| `git-workflow update-children <baseBranch>` | Update child branches after parent merge |
 
 ### Commit Tracking
 | Command | Description |
 |---------|-------------|
-| `git-workflow tag <hash> pr-ready` | Mark commit PR-ready |
-| `git-workflow tag <hash> internal` | Mark commit internal-only |
+| `git-workflow tag <hash> <status>` | Tag commit (pr-ready, internal-only, pending) |
 | `git-workflow pr-ready` | List PR-ready commits |
 | `git-workflow internal` | List internal-only commits |
+| `git-workflow commits` | List all tracked commits |
 | `git-workflow diff` | Show staging vs integration diff |
 
 ### Daily & Reporting
