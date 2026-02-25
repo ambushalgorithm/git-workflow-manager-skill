@@ -201,3 +201,42 @@ describe('Additional Sync Coverage', () => {
     expect(checkoutCalls).toHaveLength(0);
   });
 });
+
+describe('Force push', () => {
+  const createConfig = () => ({
+    repoType: 'internal' as const,
+    defaultBranch: 'master',
+    createdAt: new Date().toISOString(),
+    branchPrefixes: { feature: 'feat/', hotfix: 'hotfix/', release: 'release/' }
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('syncStaging with force pushes', async () => {
+    const config = createConfig();
+    
+    (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('develop');
+    (gitModule.fetchAll as jest.Mock).mockResolvedValue(undefined);
+    (gitModule.git as jest.Mock).mockResolvedValue('');
+    (gitModule.pushBranch as jest.Mock).mockResolvedValue(undefined);
+
+    await syncStaging(config, true);
+
+    expect(gitModule.pushBranch).toHaveBeenCalledWith('staging');
+  });
+
+  it('syncDevelop with force pushes', async () => {
+    const config = createConfig();
+    
+    (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('main');
+    (gitModule.fetchAll as jest.Mock).mockResolvedValue(undefined);
+    (gitModule.git as jest.Mock).mockResolvedValue('');
+    (gitModule.pushBranch as jest.Mock).mockResolvedValue(undefined);
+
+    await syncDevelop(config, true);
+
+    expect(gitModule.pushBranch).toHaveBeenCalledWith('develop');
+  });
+});
