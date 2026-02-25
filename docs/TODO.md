@@ -196,10 +196,9 @@ git push --force-with-lease origin develop
 ---
 
 ### ✅ Phase 5 Complete
-- Write unit tests for all Phase 5 functions
-- Run on QA1: `docker build -t git-workflow-test . && docker run --rm git-workflow-test`
-- Target: ≥95% coverage
-- Run E2E tests for branch update/merge logic
+- Write unit tests locally (DO NOT run locally)
+- Run unit tests and E2E tests in Docker on QA1
+- Target: ≥95% code coverage
 
 ---
 
@@ -242,11 +241,9 @@ BLOCKERS:
 ---
 
 ### ✅ Phase 6 Complete
-- Write unit tests for all Phase 6 functions
-- Run on QA1: `docker build -t git-workflow-test . && docker run --rm git-workflow-test`
-- Target: ≥95% coverage
-- Run FULL E2E test suite
-- Verify daily reports work correctly
+- Write unit tests locally (DO NOT run locally)
+- Run unit tests and E2E tests in Docker on QA1
+- Target: ≥95% code coverage
 
 ---
 
