@@ -124,3 +124,56 @@ describe('Commit Tracking', () => {
     });
   });
 });
+describe('Additional Commit Tests', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('tagCommit should update existing commit status', async () => {
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('') // cat-file check
+      .mockResolvedValueOnce('updated message'); // log
+    
+    const existingConfig = {
+      repoType: 'internal' as const,
+      defaultBranch: 'master',
+      createdAt: new Date().toISOString(),
+      branchPrefixes: { feature: 'feat/', hotfix: 'hotfix/', release: 'release/' },
+      tracking: {
+        commits: [
+          { hash: 'abc123def', status: 'pending' as any, message: 'old message', tags: [], createdAt: '2024-01-01' }
+        ]
+      }
+    };
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue(existingConfig);
+    (repoModule.saveConfig as jest.Mock).mockResolvedValue(undefined);
+
+    await tagCommit('abc123def', 'pr-ready');
+
+    expect(repoModule.saveConfig).toHaveBeenCalled();
+    // Should have updated existing commit
+    const savedConfig = (repoModule.saveConfig as jest.Mock).mock.calls[0][0];
+    expect(savedConfig.tracking.commits[0].status).toBe('pr-ready');
+  });
+
+  it('showStagingIntegrationDiff should call git log', async () => {
+    (gitModule.git as jest.Mock).mockResolvedValue('commit abc\n\nfile1.txt');
+
+    const diff = await showStagingIntegrationDiff();
+    expect(gitModule.git).toHaveBeenCalledWith(['log', 'staging..integration', '--oneline', '--name-only']);
+  });
+
+  it('listPRReadyCommits should call git for file list', async () => {
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({
+      tracking: {
+        commits: [
+          { hash: 'abc123', status: 'pr-ready', message: 'test', tags: [], createdAt: '2024-01-01' }
+        ]
+      }
+    });
+    (gitModule.git as jest.Mock).mockResolvedValue('file1.txt');
+
+    const commits = await listPRReadyCommits();
+    expect(commits[0].files).toContain('file1.txt');
+  });
+});
