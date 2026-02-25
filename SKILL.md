@@ -123,7 +123,7 @@ git-workflow status
 git-workflow daily
 
 # Check upstream PR status only
-git-workflow check-upstream
+git-workflow upstream
 ```
 
 ## Commit Tracking
