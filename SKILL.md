@@ -133,9 +133,18 @@ Commits are tagged with status:
 - `internal-only` - never going upstream
 - `pending` - undecided
 
-View tracked commits:
 ```bash
-git-workflow commits list --status pr-ready
+# View tracked commits:
+git-workflow commits list
+
+# Commits tagged as PR-ready:
+git-workflow commits list pr-ready
+
+# Commits tagged as internal-only:
+git-workflow commits list internal-only
+
+# Commits pending decision:
+git-workflow commits list pending
 ```
 
 ## Configuration
