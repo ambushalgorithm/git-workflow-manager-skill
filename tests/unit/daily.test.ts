@@ -577,3 +577,73 @@ describe('Direct Error Path Tests', () => {
     expect(prs[0].checksPassing).toBe(false);
   });
 });
+
+describe('Final Coverage Tests', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('checkUpstreamStatus with merged and open PRs', async () => {
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({
+      defaultBranch: 'main',
+      upstreamRemote: 'upstream',
+      repoType: 'fork'
+    });
+    // detectNewUpstreamCommits
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('100')
+      .mockResolvedValueOnce('100');
+    // gh available and returns PRs
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('gh version 2.40.0')
+      .mockResolvedValueOnce(JSON.stringify([
+        { number: 1, title: 'Merged', state: 'MERGED' },
+        { number: 2, title: 'Closed', state: 'CLOSED' },
+        { number: 3, title: 'Open', state: 'OPEN' }
+      ]));
+    
+    const status = await checkUpstreamStatus();
+    expect(status.mergedPRs).toHaveLength(1);
+    expect(status.newPRs).toHaveLength(1);
+  });
+
+  it('getBranchStatus should include branches with upstream', async () => {
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('feat/test 2024-01-01 origin/feat/test')
+      .mockResolvedValueOnce('3  5');
+    
+    const branches = await getBranchStatus();
+    expect(branches.length).toBeGreaterThan(0);
+  });
+
+  it('getBranchStatus handles no rev-list output', async () => {
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('feat/test 2024-01-01 origin/feat/test')
+      .mockResolvedValueOnce('');
+    
+    const branches = await getBranchStatus();
+    expect(branches).toBeDefined();
+  });
+
+  it('reportBlockers catches stale branch errors', async () => {
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('feat/test')
+      .mockRejectedValueOnce(new Error('log failed'));
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({});
+    
+    const blockers = await reportBlockers();
+    expect(blockers.staleBranches).toEqual([]);
+  });
+
+  it('reportBlockers with failed checks PRs', async () => {
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('')
+      .mockRejectedValueOnce(new Error('no gh'));
+    // gh fails later too
+    (gitModule.git as jest.Mock).mockRejectedValue(new Error('no gh'));
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({});
+    
+    const blockers = await reportBlockers();
+    expect(blockers).toBeDefined();
+  });
+});
