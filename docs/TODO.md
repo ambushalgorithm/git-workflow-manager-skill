@@ -357,7 +357,7 @@ When porting to Python:
 
 ### Running Tests on QA1
 
-Unit tests are CPU-intensive. Run them on QA1 server instead of local machine.
+All tests run in Docker for isolation and consistency.
 
 **Full workflow:**
 
@@ -369,31 +369,46 @@ Unit tests are CPU-intensive. Run them on QA1 server instead of local machine.
 
 2. **Commit & push local changes** (from this machine)
 
-3. **On QA1:**
+3. **On QA1 - Build & Run:**
    ```bash
    cd ~/Projects/openclaw-skills-development/git-workflow-manager
    git pull
-   npm install
-   npm test -- --coverage
+   
+   # Build Docker image
+   docker build -t git-workflow-test .
+   
+   # Run unit tests with coverage
+   docker run --rm git-workflow-test
+   
+   # Or run specific test file
+   docker run --rm git-workflow-test npm test -- --testPathPattern="repo.test.ts"
    ```
 
 4. **Review coverage** - Must hit >= 95%
 
-### Manual E2E Testing
+### E2E Testing
 
-Create a test repository to verify functionality:
+E2E tests also run in Docker containers:
 
-1. **Create test repo:** `Git Workflow Manager Test Repo` on GitHub (under ambushalgorithm account)
-2. **Test fork workflow:**
-   - Fork the test repo to simulate open source workflow
-   - Run Phase 1: detect repo type, create branch hierarchy
-   - Verify branches created correctly
-3. **Test internal workflow:**
-   - Clone directly (no fork) to simulate closed source
-   - Run Phase 1: detect repo type, create branch hierarchy
-   - Verify branches created correctly
-4. **Test sync operations:** Verify rebasing works between branches
-5. **Test PR flow:** Verify cherry-pick to integration branch works
+1. **Fork test repo** (for fork workflow):
+   ```bash
+   gh repo fork ambushalgorithm/Git-Workflow-Manager-Test-Repo
+   ```
+
+2. **Internal test repo** (for internal workflow):
+   ```bash
+   gh repo clone ambushalgorithm/Git-Workflow-Manager-Test-Repo internal-test
+   ```
+
+3. **Run E2E in Docker:**
+   ```bash
+   # From project root
+   docker run -v $(pwd):/app -w /app node:20-alpine sh -c "\
+     apk add git && \
+     npm install && \
+     npm run build && \
+     npm test -- --testPathPattern='e2e'"
+   ```
 
 ---
 
