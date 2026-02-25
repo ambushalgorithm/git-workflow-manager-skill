@@ -45,8 +45,8 @@ echo "Testing 'git-workflow init'..."
 git-workflow init
 
 # Test branch creation
-echo "Testing 'git-workflow create'..."
-git-workflow create feat/test-feature
+echo "Testing 'git-workflow create feat test-feature'..."
+git-workflow create feat test-feature
 
 # Test branch exists
 if git branch | grep -q "feat/test-feature"; then
