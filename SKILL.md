@@ -41,31 +41,52 @@ hotfix/*
 feat/*
 ```
 
-## Quick Reference
-
+## Commands
 | Command | Description |
 |---------|-------------|
-| `git-workflow init` | Initialize workflow on repository |
+[command] | [description] |
+
+| Init & Config | |
+|---------|-------------|
+| `git-workflow init` | Auto-detect and setup workflow |
 | `git-workflow detect` | Detect repository type (fork or internal) |
-| `git-workflow sync [branch]` | Sync branches in the workflow hierarchy |
+
+| Branch Operations | |
+|---------|-------------|
 | `git-workflow create <type> <name>` | Create a new feature, hotfix, or release branch |
+| `git-workflow create feat <name>` | Create feature branch |
+| `git-workflow create hotfix <name>` | Create hotfix branch |
+| `git-workflow create release <name>` | Create release branch |
 | `git-workflow rebase [parent]` | Rebase current branch onto parent |
-| `git-workflow status` | Show current workflow status |
-| `git-workflow tag <hash> <status>` | Tag a commit with status (pr-ready, internal-only, pending) |
+
+| Sync Operations | |
+|---------|-------------|
+| `git-workflow sync [branch]` | Sync branches (staging, develop, or all) |
+
+| Update Operations | |
+|---------|-------------|
+| `git-workflow strategy [action] [strategy] [branch]` | Set or show merge strategy |
+| `git-workflow update <branch> [onto]` | Update branch to latest (uses strategy) |
+| `git-workflow status-branch [branch]` | Check sync status |
+| `git-workflow ff <branch> <to>` | Fast-forward branch |
+| `git-workflow update-children <baseBranch>` | Update child branches after parent merge |
+
+| Commit Tracking | |
+|---------|-------------|
+| `git-workflow tag <hash> <status>` | Tag commit (pr-ready, internal-only, pending) |
 | `git-workflow pr-ready` | List commits tagged as pr-ready |
 | `git-workflow internal` | List commits tagged as internal-only |
 | `git-workflow commits` | List all tracked commits |
 | `git-workflow diff` | Show diff between staging and integration |
+
+| Daily & Reporting | |
+|---------|-------------|
+| `git-workflow status` | Show current workflow status |
 | `git-workflow daily` | Run daily check and generate report |
 | `git-workflow prs` | List open pull requests |
 | `git-workflow upstream` | Check upstream status (for forks) |
 | `git-workflow blockers` | Show blockers |
 | `git-workflow attention` | Show branches needing attention |
-| `git-workflow strategy [action] [strategy] [branch]` | Set or show merge strategy |
-| `git-workflow update <branch> [onto]` | Update branch to latest (uses strategy) |
-| `git-workflow status-branch [branch]` | Show branch sync status |
-| `git-workflow ff <branch> <to>` | Fast-forward branch to target |
-| `git-workflow update-children <baseBranch>` | Update child branches after parent merge |
 
 ## Usage
 
@@ -80,6 +101,20 @@ git-workflow init --type fork
 
 # Force internal mode
 git-workflow init --type internal
+```
+
+### Configure How Branches Update
+
+```bash
+# Default: rebase for all branches
+git-workflow strategy set rebase
+
+# Default: merge for all branches  
+git-workflow strategy set merge
+
+# Branch-specific
+git-workflow strategy set rebase develop
+git-workflow strategy set merge staging
 ```
 
 ### Syncing Branches

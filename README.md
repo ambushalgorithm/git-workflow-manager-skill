@@ -11,6 +11,40 @@ This repository is actively being worked on and is not meant for use until featu
 
 Manage complex Git branching workflows for AI agents. Handles branch lifecycle, upstream syncing, PR tracking, and automated maintenance.
 
+## Branch Hierarchy
+
+### Open Source (Fork)
+```
+upstream/master
+        ↑
+origin/master   ← synced with upstream
+        ↑
+origin/staging ← ALL changes (PR'd + non-PR'd)
+        ↑
+origin/integration ← PR-ready subset
+        ↑
+origin/develop ← rebased working base
+        ↑
+origin/release/x.x.x
+origin/hotfix/*
+origin/feat/*
+```
+
+### Closed Source (Internal)
+```
+master
+        ↑
+staging ← ALL changes
+        ↑
+integration ← PR-ready
+        ↑
+develop ← rebased working base
+        ↑
+release/x.x.x
+hotfix/*
+feat/*
+```
+
 ## Why This Skill?
 
 AI agents need a consistent, safe way to manage Git operations without breaking things:
@@ -36,6 +70,33 @@ git-workflow sync staging
 git-workflow status
 ```
 
+## Daily Report
+
+Run automatically or on-demand:
+
+```bash
+git-workflow daily
+```
+
+Output:
+```
+=== Git Workflow Daily ===
+Repo: my-project (Internal)
+Date: 2026-02-24
+
+BRANCH STATUS:
+✓ master - synced
+✓ staging - 2 commits ahead
+✓ integration - 1 commit ahead (1 PR open)
+✓ develop - synced with staging
+
+NEEDS ATTENTION:
+- feat/new-feature is 3 commits behind develop
+
+BLOCKERS:
+- None
+```
+
 ## Full Documentation
 
 For complete command reference, usage examples, and technical details, see:
@@ -52,7 +113,7 @@ For complete command reference, usage examples, and technical details, see:
 
 ```bash
 # For OpenClaw
-cp -r git-workflow-manager ~/Projects/openclaw-skills/
+git clone https://github.com/ambushalgorithm/git-workflow-manager-skill.git ~/path/to/skills/git-workflow-manager
 
 # For standalone CLI
 npm install -g git-workflow-manager
