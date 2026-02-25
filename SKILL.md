@@ -45,14 +45,27 @@ feat/*
 
 | Command | Description |
 |---------|-------------|
-| `git-workflow init` | Auto-detect repo type and setup branches |
-| `git-workflow sync staging` | Rebase staging onto master |
-| `git-workflow sync develop` | Rebase develop onto staging |
-| `git-workflow create feat/name` | Create feature branch off develop |
-| `git-workflow create hotfix/name` | Create hotfix branch off staging |
-| `git-workflow prepare-pr` | Cherry-pick PR-ready commits to integration |
-| `git-workflow status` | Show full branch and PR status |
-| `git-workflow daily` | Run daily check + report |
+| `git-workflow init` | Initialize workflow on repository |
+| `git-workflow detect` | Detect repository type (fork or internal) |
+| `git-workflow sync [branch]` | Sync branches in the workflow hierarchy |
+| `git-workflow create <type> <name>` | Create a new feature, hotfix, or release branch |
+| `git-workflow rebase [parent]` | Rebase current branch onto parent |
+| `git-workflow status` | Show current workflow status |
+| `git-workflow tag <hash> <status>` | Tag a commit with status (pr-ready, internal-only, pending) |
+| `git-workflow pr-ready` | List commits tagged as pr-ready |
+| `git-workflow internal` | List commits tagged as internal-only |
+| `git-workflow commits` | List all tracked commits |
+| `git-workflow diff` | Show diff between staging and integration |
+| `git-workflow daily` | Run daily check and generate report |
+| `git-workflow prs` | List open pull requests |
+| `git-workflow upstream` | Check upstream status (for forks) |
+| `git-workflow blockers` | Show blockers |
+| `git-workflow attention` | Show branches needing attention |
+| `git-workflow strategy [action] [strategy] [branch]` | Set or show merge strategy |
+| `git-workflow update <branch> [onto]` | Update branch to latest (uses strategy) |
+| `git-workflow status-branch [branch]` | Show branch sync status |
+| `git-workflow ff <branch> <to>` | Fast-forward branch to target |
+| `git-workflow update-children <baseBranch>` | Update child branches after parent merge |
 
 ## Usage
 
@@ -107,10 +120,16 @@ git-workflow rebase staging
 
 ```bash
 # List PR-ready commits
-git-workflow list-pr
+git-workflow pr-ready
 
-# Prepare commits for upstream PR (cherry-pick to integration)
-git-workflow prepare-pr
+# List internal-only commits
+git-workflow internal
+
+# List all tracked commits
+git-workflow commits
+
+# List open pull requests
+git-workflow prs
 
 # Show full status
 git-workflow status
