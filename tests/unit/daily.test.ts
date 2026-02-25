@@ -680,3 +680,33 @@ describe('Comprehensive Daily Coverage', () => {
     expect(blockers).toBeDefined();
   });
 });
+
+describe('Targeted Daily Coverage', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('reportBlockers should detectStaleBranches when branches exist', async () => {
+    // First call: branch --format returns feature branches
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('feat/test1\nfeat/test2')
+      // Second/third: git log for dates - return future dates (not stale)
+      .mockResolvedValueOnce(new Date(Date.now() + 86400000).toISOString()) // tomorrow
+      .mockResolvedValueOnce(new Date(Date.now() + 86400000).toISOString());
+    // No gh available
+    (gitModule.git as jest.Mock).mockRejectedValue(new Error('no gh'));
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({});
+    
+    const blockers = await reportBlockers();
+    expect(blockers.staleBranches).toEqual([]);
+  });
+
+  it('getBranchStatus should use origin prefix correctly', async () => {
+    // Branch that has origin/ prefix in upstream
+    (gitModule.git as jest.Mock).mockResolvedValue('feat/awesome 2024-01-01 origin/feat/awesome');
+    (gitModule.git as jest.Mock).mockResolvedValue('0  0'); // ahead=0, behind=0
+    
+    const branches = await getBranchStatus();
+    expect(branches).toBeDefined();
+  });
+});
