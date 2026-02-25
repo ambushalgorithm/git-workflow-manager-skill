@@ -10,7 +10,7 @@ jest.mock('../../src/lib/repo', () => ({
 
 import * as gitModule from '../../src/lib/git';
 import * as repoModule from '../../src/lib/repo';
-import { tagCommit, listPRReadyCommits, listInternalOnlyCommits, listAllTrackedCommits, showStagingIntegrationDiff } from '../../src/lib/commits';
+import { tagCommit, listPRReadyCommits, listInternalOnlyCommits, listAllTrackedCommits, showStagingIntegrationDiff, storeCommitMetadata, getCommitInfo, removeCommitFromTracking } from '../../src/lib/commits';
 
 describe('Commit Tracking', () => {
   beforeEach(() => {
@@ -175,5 +175,92 @@ describe('Additional Commit Tests', () => {
 
     const commits = await listPRReadyCommits();
     expect(commits[0].files).toContain('file1.txt');
+  });
+});
+
+describe('Store Commit Metadata', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('storeCommitMetadata should add upstream PR', async () => {
+    const config = {
+      tracking: {
+        commits: [{ hash: 'abc123', status: 'pr-ready' as any, message: 'test', tags: [], createdAt: '2024-01-01' }]
+      }
+    };
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue(config);
+    (repoModule.saveConfig as jest.Mock).mockResolvedValue(undefined);
+
+    await storeCommitMetadata('abc123', { upstreamPr: 42 });
+
+    expect(repoModule.saveConfig).toHaveBeenCalled();
+  });
+
+  it('storeCommitMetadata should throw if no tracking', async () => {
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({});
+
+    await expect(storeCommitMetadata('abc123', { upstreamPr: 42 })).rejects.toThrow('No workflow config');
+  });
+
+  it('storeCommitMetadata should throw if commit not found', async () => {
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({
+      tracking: { commits: [] }
+    });
+
+    await expect(storeCommitMetadata('notfound', { upstreamPr: 42 })).rejects.toThrow('not found in tracking');
+  });
+});
+
+describe('Get Commit Info', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('getCommitInfo should return commit info', async () => {
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({
+      tracking: {
+        commits: [{ hash: 'abc123', status: 'pr-ready' as any, message: 'test commit', tags: [], createdAt: '2024-01-01' }]
+      }
+    });
+
+    const info = await getCommitInfo('abc123');
+    expect(info).not.toBeNull();
+    expect(info?.hash).toBe('abc123');
+  });
+
+  it('getCommitInfo should return null if not found', async () => {
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({
+      tracking: { commits: [] }
+    });
+
+    const info = await getCommitInfo('notfound');
+    expect(info).toBeNull();
+  });
+});
+
+describe('Remove Commit From Tracking', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('removeCommitFromTracking should remove commit', async () => {
+    const config = {
+      tracking: {
+        commits: [
+          { hash: 'abc123', status: 'pr-ready' as any, message: 'test', tags: [], createdAt: '2024-01-01' },
+          { hash: 'def456', status: 'internal-only' as any, message: 'test2', tags: [], createdAt: '2024-01-02' }
+        ]
+      }
+    };
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue(config);
+    (repoModule.saveConfig as jest.Mock).mockResolvedValue(undefined);
+
+    await removeCommitFromTracking('abc123');
+
+    expect(repoModule.saveConfig).toHaveBeenCalled();
+    const savedConfig = (repoModule.saveConfig as jest.Mock).mock.calls[0][0];
+    expect(savedConfig.tracking.commits).toHaveLength(1);
+    expect(savedConfig.tracking.commits[0].hash).toBe('def456');
   });
 });
