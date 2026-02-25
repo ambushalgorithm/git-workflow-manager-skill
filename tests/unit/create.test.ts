@@ -150,3 +150,42 @@ describe('Create Branch Error Paths', () => {
     await expect(createReleaseBranch(config, 'release/existing')).rejects.toThrow("Branch 'release/existing' already exists");
   });
 });
+describe('Additional Create Coverage', () => {
+  const createConfig = () => ({
+    repoType: 'internal' as const,
+    defaultBranch: 'main',
+    createdAt: new Date().toISOString(),
+    branchPrefixes: { feature: 'feat/', hotfix: 'hotfix/', release: 'release/' }
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('createFeatureBranch throws when parent does not exist', async () => {
+    const config = createConfig();
+    
+    (gitModule.branchExists as jest.Mock).mockResolvedValue(false);
+    
+    await expect(createFeatureBranch(config, 'feat/new', 'nonexistent')).rejects.toThrow('does not exist');
+  });
+
+  it('mergeBranch merges into develop', async () => {
+    (gitModule.git as jest.Mock).mockResolvedValue('');
+    (gitModule.branchExists as jest.Mock).mockResolvedValue(true);
+    
+    await mergeBranch('feat/test');
+    
+    expect(gitModule.git).toHaveBeenCalledWith(['checkout', 'develop']);
+    expect(gitModule.git).toHaveBeenCalledWith(['merge', 'feat/test']);
+  });
+
+  it('mergeBranch merges into custom target', async () => {
+    (gitModule.git as jest.Mock).mockResolvedValue('');
+    (gitModule.branchExists as jest.Mock).mockResolvedValue(true);
+    
+    await mergeBranch('feat/test', 'staging');
+    
+    expect(gitModule.git).toHaveBeenCalledWith(['checkout', 'staging']);
+  });
+});

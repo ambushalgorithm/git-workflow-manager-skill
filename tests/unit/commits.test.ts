@@ -10,7 +10,7 @@ jest.mock('../../src/lib/repo', () => ({
 
 import * as gitModule from '../../src/lib/git';
 import * as repoModule from '../../src/lib/repo';
-import { tagCommit, listPRReadyCommits, listInternalOnlyCommits, listAllTrackedCommits, showStagingIntegrationDiff, storeCommitMetadata, getCommitInfo, removeCommitFromTracking } from '../../src/lib/commits';
+import { tagCommit, listPRReadyCommits, listInternalOnlyCommits, listAllTrackedCommits, showStagingIntegrationDiff, storeCommitMetadata, getCommitInfo, removeCommitFromTracking, updateCommitStatus, tagCommitMessage } from '../../src/lib/commits';
 
 describe('Commit Tracking', () => {
   beforeEach(() => {
@@ -365,5 +365,48 @@ describe('tagCommit additional cases', () => {
     await tagCommit('abc123def', 'internal-only');
 
     expect(repoModule.saveConfig).toHaveBeenCalled();
+  });
+});
+
+describe('Additional Commit Coverage', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('updateCommitStatus calls tagCommit and logs', async () => {
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('') // cat-file
+      .mockResolvedValueOnce('test commit'); // log
+    (repoModule.loadConfig as jest.Mock).mockResolvedValue({
+      repoType: 'internal',
+      defaultBranch: 'master',
+      createdAt: new Date().toISOString(),
+      branchPrefixes: { feature: 'feat/', hotfix: 'hotfix/', release: 'release/' },
+      tracking: { commits: [] }
+    });
+    (repoModule.saveConfig as jest.Mock).mockResolvedValue(undefined);
+
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+    await updateCommitStatus('abc123def', 'pr-ready');
+    
+    expect(consoleSpy).toHaveBeenCalled();
+    consoleSpy.mockRestore();
+  });
+
+  it('tagCommitMessage creates tag', async () => {
+    // commit exists check passes
+    (gitModule.git as jest.Mock).mockResolvedValue('');
+    
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+    await tagCommitMessage('abc123def', 'v1.0.0');
+    
+    expect(gitModule.git).toHaveBeenCalledWith(['tag', '-a', 'v1.0.0', '-m', 'Tagged: v1.0.0', 'abc123def']);
+    consoleSpy.mockRestore();
+  });
+
+  it('tagCommitMessage throws for non-existent commit', async () => {
+    (gitModule.git as jest.Mock).mockRejectedValue(new Error('not found'));
+    
+    await expect(tagCommitMessage('invalid', 'v1.0')).rejects.toThrow('not found');
   });
 });
