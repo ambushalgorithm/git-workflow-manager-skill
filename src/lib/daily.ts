@@ -182,8 +182,8 @@ export async function detectNewUpstreamCommits(): Promise<number> {
     // Get upstream default branch count
     const upstreamCount = await git(['rev-list', '--count', `${config.upstreamRemote}/${config.defaultBranch}`]);
     
-    const local = parseInt(localCount.trim(), 10);
-    const upstream = parseInt(upstreamCount.trim(), 10);
+    const local = parseInt(localCount.trim(), 10) || 0;
+    const upstream = parseInt(upstreamCount.trim(), 10) || 0;
     
     return Math.max(0, upstream - local);
   } catch {

@@ -481,6 +481,6 @@ describe('More Daily Coverage', () => {
       .mockResolvedValueOnce('also-not-a-number');
     
     const count = await detectNewUpstreamCommits();
-    expect(count).toBe(0);
+    expect(count).toBe(0); // parseInt('not-a-number') || 0 = 0
   });
 });
