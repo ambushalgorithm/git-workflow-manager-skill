@@ -102,7 +102,19 @@ describe('Branch Updates', () => {
 
   describe('mergeBranchInto', () => {
     it('merges branch into target', async () => {
+      // Already on develop, so no checkout needed
       (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('develop');
+      (gitModule.git as jest.Mock).mockResolvedValue('');
+      
+      await mergeBranchInto('feat/test', 'develop');
+      
+      // Should call merge directly (no checkout needed since already on develop)
+      expect(gitModule.git).toHaveBeenCalledWith(['merge', 'feat/test']);
+    });
+
+    it('checks out target when not on it', async () => {
+      // Not on develop, need to checkout first
+      (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('feat/test');
       (gitModule.git as jest.Mock).mockResolvedValue('');
       
       await mergeBranchInto('feat/test', 'develop');
