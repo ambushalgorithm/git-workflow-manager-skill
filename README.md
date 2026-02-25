@@ -1,3 +1,9 @@
+# ⚠️🚧 UNDER CONSTRUCTION 🚧⚠️
+
+This repository is actively being worked on and is not meant for use until features are completed. Use at your own risk!
+
+---
+
 # Git Workflow Manager
 
 **Built with:** minimax-m2.5:cloud  
