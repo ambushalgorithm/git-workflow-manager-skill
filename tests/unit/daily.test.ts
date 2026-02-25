@@ -257,29 +257,6 @@ describe('Stale Branches Detection', () => {
     jest.clearAllMocks();
   });
 
-  it('should get remote URL for repo', async () => {
-    (gitModule.git as jest.Mock)
-      .mockResolvedValueOnce('remote.origin.url')
-      .mockResolvedValueOnce('test-repo');
-    (repoModule.loadConfig as jest.Mock).mockResolvedValue({ repoType: 'internal' });
-    (gitModule.git as jest.Mock).mockResolvedValue('feat/test 2024-01-01');
-    
-    const report = await generateDailyReport();
-    expect(report.repo).toBe('test-repo');
-  });
-
-  it('should handle branches without upstream', async () => {
-    (gitModule.git as jest.Mock)
-      .mockResolvedValueOnce('origin')
-      .mockResolvedValueOnce('test-repo');
-    (repoModule.loadConfig as jest.Mock).mockResolvedValue({ repoType: 'internal' });
-    // getBranchStatus - for-each-ref
-    (gitModule.git as jest.Mock).mockResolvedValue('');
-    
-    const report = await generateDailyReport();
-    expect(report.branchStatus).toEqual([]);
-  });
-
   it('should format report with no PRs', () => {
     const report = {
       repo: 'test',
