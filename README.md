@@ -62,9 +62,18 @@ git-workflow init
 
 # Create a feature branch
 git-workflow create feat my-new-feature
+```
+### Run in order: 1 → 2 → 3 to keep everything in sync.
 
-# Sync with master
+```bash
+# Rebases staging onto main
 git-workflow sync staging
+
+# Rebases develop onto staging
+git-workflow sync develop
+
+# Rebases current branch onto develop
+git-workflow rebase develop 
 
 # Check status
 git-workflow status
