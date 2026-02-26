@@ -13,13 +13,13 @@ A skill for managing Git branching workflows across open source forks and intern
 ```
 upstream/master
         ↑
-origin/master   ← synced with upstream
+origin/master            ← synced with upstream
         ↑
-origin/staging ← ALL changes (PR'd + non-PR'd)
+origin/staging           ← ALL changes (PR'd + non-PR'd)
         ↑
-origin/integration ← PR-ready subset
+origin/integration       ← PR-ready subset
         ↑
-origin/develop ← rebased working base
+origin/develop           ← rebased working base
         ↑
 origin/release/x.x.x
 origin/hotfix/*
@@ -28,17 +28,17 @@ origin/feat/*
 
 ### Closed Source (Internal)
 ```
-master
+     master
         ↑
-staging ← ALL changes
+     staging        ← ALL changes
         ↑
-integration ← PR-ready
+     integration    ← PR-ready
         ↑
-develop ← rebased working base
+     develop        ← rebased working base
         ↑
-release/x.x.x
-hotfix/*
-feat/*
+     release/x.x.x
+     hotfix/*
+     feat/*
 ```
 
 ## Commands
@@ -188,6 +188,18 @@ Commits are tagged with status:
 - `pending` - undecided
 
 ```bash
+# Mark commit as PR-ready
+git-workflow tag abc1234 pr-ready
+
+# Mark commit as internal-only
+git-workflow tag abc1234 internal
+
+# List PR-ready commits
+git-workflow pr-ready
+
+# Show diff between staging and integration
+git-workflow diff
+
 # View tracked commits:
 git-workflow commits list
 
