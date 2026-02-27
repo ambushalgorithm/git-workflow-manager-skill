@@ -373,7 +373,7 @@ async function detectStaleBranches(days: number = 30): Promise<string[]> {
 /**
  * Report blockers
  */
-export async function reportBlockers(): Promise<Blockers> {
+export async function reportBlockers(options: ListPROptions = {}): Promise<Blockers> {
   const blockers: Blockers = {
     conflicts: [],
     failedChecks: [],
@@ -383,10 +383,10 @@ export async function reportBlockers(): Promise<Blockers> {
   // Get stale branches
   blockers.staleBranches = await detectStaleBranches();
 
-  // Get PRs with failed checks
+  // Get PRs with failed checks (apply filters)
   try {
     if (await detectGitCLI()) {
-      const prs = await listOpenPRs();
+      const prs = await listOpenPRs(options);
       blockers.failedChecks = prs
         .filter(pr => !pr.checksPassing)
         .map(pr => `PR #${pr.number}: ${pr.title}`);
@@ -462,7 +462,7 @@ export async function generateDailyReport(options: ListPROptions = {}): Promise<
   }
 
   // Get blockers
-  report.blockers = await reportBlockers();
+  report.blockers = await reportBlockers(options);
 
   // Get branches needing attention
   report.attention = await showBranchesNeedingAttention();
