@@ -241,6 +241,46 @@ function parseCommitType(message: string): string {
 }
 
 /**
+ * Generate empty PR template (for --dry-run preview)
+ */
+export async function generatePRTemplate(): Promise<string> {
+  const model = process.env.OPENCLAW_MODEL || '[Model]';
+  const openclawVersion = process.env.OPENCLAW_VERSION || '[version]';
+  
+  return `### AI/Vibe-Coded Disclosure 🤖
+- [x] **AI-assisted:** Built with ${model} + OpenClaw v${openclawVersion}
+- [x] **Testing level:** [e.g., Fully tested (N tests)]
+- [x] **Code understanding:** Yes — reviewed for compliance with [Project] standards
+
+# Summary
+[2-3 sentence overview of what this PR does]
+
+## What
+- [Bullet point 1]
+- [Bullet point 2]
+- [Bullet point 3]
+
+## Why
+[Why this change matters - what problem does it solve? What does it enable?]
+
+## Technical Changes
+| File | Change |
+|------|--------|
+| file1.py | [Change description] |
+| file2.ts | [Change description] |
+
+## Testing
+- ✅ [Test 1]
+- ✅ [Test 2]
+
+## Breaking Changes
+[None or describe any breaking changes]
+
+## Related
+[Any related PRs, issues, or context]`;
+}
+
+/**
  * Generate PR description from commit messages
  * Uses the current working branch (not the PR branch)
  */
@@ -372,7 +412,7 @@ ${why.join(' ') || 'Improvements and enhancements to the codebase.'}
 /**
  * Create a PR using gh CLI
  * If no body provided, auto-generates from commit messages
- * If dryRun is true, just prints the template without creating PR
+ * If dryRun is true, shows template for AI/human to fill in
  */
 export async function createPR(title: string, body: string | null, prBranchName: string, dryRun: boolean = false): Promise<void> {
   const target = await getPRTarget();
@@ -385,12 +425,14 @@ export async function createPR(title: string, body: string | null, prBranchName:
   console.log(`  To: ${target.owner}/${target.repo}:${target.baseBranch}`);
   
   if (dryRun) {
-    console.log('\n=== PR Preview (not created) ===\n');
+    // Show empty template for AI/human to fill in
+    const template = await generatePRTemplate();
+    console.log('\n=== PR Template (not created) ===\n');
     console.log(`Title: ${title}`);
-    console.log(`\nBody:\n${description}`);
-    console.log('\n=== End Preview ===\n');
+    console.log(`\nBody:\n${template}`);
+    console.log('\n=== End Template ===\n');
     console.log('To create the PR, run:');
-    console.log(`  git-workflow pr create ${prBranchName.replace('-pr', '')} -t "${title}" -b "<paste body above>"`);
+    console.log(`  git-workflow pr create ${prBranchName.replace('-pr', '')} -t "${title}" -b "<paste filled template above>"`);
     return;
   }
   
