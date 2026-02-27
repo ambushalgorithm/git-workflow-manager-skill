@@ -68,32 +68,46 @@ export interface ReportChannel {
 /**
  * Run a command directly (not through git wrapper)
  */
-async function runCmd(cmd: string): Promise<string> {
-  const { stdout } = await promisify(exec)(cmd);
+async function runCmd(cmd: string, cwd?: string): Promise<string> {
+  const { stdout } = await promisify(exec)(cmd, { cwd });
   return stdout.trim();
 }
+
+// Common gh installation paths
+const GH_PATHS = [
+  'gh',
+  '/home/linuxbrew/.linuxbrew/bin/gh',
+  '/usr/local/bin/gh',
+  '/opt/homebrew/bin/gh',
+];
 
 /**
  * Detect if gh CLI is available
  */
 export async function detectGitCLI(): Promise<boolean> {
-  try {
-    await runCmd('gh --version');
-    return true;
-  } catch {
-    return false;
+  for (const ghPath of GH_PATHS) {
+    try {
+      await runCmd(`${ghPath} --version`);
+      return true;
+    } catch {
+      // Try next path
+    }
   }
+  return false;
 }
 
 /**
  * Run gh command with arguments
  */
-async function ghCommand(args: string[]): Promise<string> {
-  try {
-    return await runCmd(`gh ${args.join(' ')}`);
-  } catch (error: any) {
-    throw new Error(`gh command failed: ${error.message}`);
+async function ghCommand(args: string[], cwd?: string): Promise<string> {
+  for (const ghPath of GH_PATHS) {
+    try {
+      return await runCmd(`${ghPath} ${args.join(' ')}`, cwd);
+    } catch {
+      // Try next path
+    }
   }
+  throw new Error('GitHub CLI (gh) not found. Install it to use PR features.');
 }
 
 /**
