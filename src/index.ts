@@ -328,9 +328,15 @@ program
 program
   .command('prs')
   .description('List open pull requests')
-  .action(async () => {
+  .option('-a, --author <username>', 'Filter by author')
+  .option('-A, --assignee <username>', 'Filter by assignee')
+  .option('-b, --base <branch>', 'Filter by base branch')
+  .option('-l, --label <label>', 'Filter by label')
+  .option('-s, --state <state>', 'Filter by state: {open|closed|merged|all}', 'open')
+  .option('-L, --limit <number>', 'Maximum number of items', '30')
+  .action(async (options) => {
     try {
-      const prs = await listOpenPRs()
+      const prs = await listOpenPRs(options)
       console.log('=== Open PRs ===')
       if (prs.length === 0) {
         console.log('No open PRs found.')

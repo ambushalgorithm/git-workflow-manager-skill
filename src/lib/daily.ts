@@ -113,13 +113,31 @@ async function ghCommand(args: string[], cwd?: string): Promise<string> {
 /**
  * List open PRs using gh CLI
  */
-export async function listOpenPRs(): Promise<PRInfo[]> {
+export interface ListPROptions {
+  author?: string;
+  assignee?: string;
+  base?: string;
+  label?: string;
+  state?: 'open' | 'closed' | 'merged' | 'all';
+  limit?: number;
+}
+
+export async function listOpenPRs(options: ListPROptions = {}): Promise<PRInfo[]> {
   if (!(await detectGitCLI())) {
     throw new Error('GitHub CLI (gh) not found. Install it to use PR features.');
   }
 
+  const args = ['pr', 'list', '--json', 'number,title,state,headRefName,baseRefName,url,mergeable,statusCheckRollup'];
+  
+  if (options.author) args.push('--author', options.author);
+  if (options.assignee) args.push('--assignee', options.assignee);
+  if (options.base) args.push('--base', options.base);
+  if (options.label) args.push('--label', options.label);
+  if (options.state && options.state !== 'open') args.push('--state', options.state);
+  if (options.limit && options.limit !== 30) args.push('--limit', options.limit.toString());
+
   try {
-    const output = await ghCommand(['pr', 'list', '--json', 'number,title,state,headRefName,baseRefName,url,mergeable,statusCheckRollup']);
+    const output = await ghCommand(args);
     const prs = JSON.parse(output);
     
     return prs.map((pr: any) => ({
