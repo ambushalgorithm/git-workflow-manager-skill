@@ -13,18 +13,20 @@ jest.mock('child_process', () => ({
   exec: jest.fn(),
 }));
 
-import { exec } from 'child_process';
+import { exec as execOriginal } from 'child_process';
+// Cast to any for jest mocking
+const exec = execOriginal as any;
 import * as gitModule from '../../src/lib/git';
 import * as repoModule from '../../src/lib/repo';
 
 // Helper to set up gh as available in exec mock
 const setupGhAvailable = () => {
-  (exec as jest.Mock).mockResolvedValue({ stdout: 'gh version 2.40.0', stderr: '' });
+  exec.mockResolvedValue({ stdout: 'gh version 2.40.0', stderr: '' });
 };
 
 // Helper to set up gh as unavailable in exec mock  
 const setupGhUnavailable = () => {
-  (exec as jest.Mock).mockRejectedValue(new Error('command not found'));
+  exec.mockRejectedValue(new Error('command not found'));
 };
 import { 
   detectGitCLI, 
@@ -68,7 +70,7 @@ describe('Daily Automation', () => {
 
     it('should return empty array when not in github repo', async () => {
       setupGhAvailable();
-      (exec as jest.Mock).mockRejectedValueOnce(new Error('could not resolve'));
+      exec.mockRejectedValueOnce(new Error('could not resolve'));
       
       const prs = await listOpenPRs();
       expect(prs).toEqual([]);
@@ -76,7 +78,7 @@ describe('Daily Automation', () => {
 
     it('should parse PR list correctly', async () => {
       setupGhAvailable();
-      (exec as jest.Mock).mockResolvedValueOnce({ stdout: JSON.stringify([
+      exec.mockResolvedValueOnce({ stdout: JSON.stringify([
         { number: 1, title: 'Test PR', state: 'OPEN', headRefName: 'feat/test', baseRefName: 'main', url: 'https://github.com/test/repo/pull/1', mergeable: true, statusCheckRollup: [] }
       ]), stderr: '' });
       
@@ -97,7 +99,7 @@ describe('Daily Automation', () => {
 
     it('should return PR details', async () => {
       setupGhAvailable();
-      (exec as jest.Mock).mockResolvedValueOnce({ stdout: JSON.stringify({
+      exec.mockResolvedValueOnce({ stdout: JSON.stringify({
         number: 1, title: 'Test PR', state: 'OPEN', headRefName: 'feat/test', baseRefName: 'main', url: 'https://github.com/test/repo/pull/1', mergeable: true, author: { login: 'testuser' }, createdAt: '2024-01-01', updatedAt: '2024-01-02', reviewers: [], labels: [], isDraft: false
       }), stderr: '' });
       
@@ -117,7 +119,7 @@ describe('Daily Automation', () => {
 
     it('should return true when PR is merged', async () => {
       setupGhAvailable();
-      (exec as jest.Mock).mockResolvedValueOnce({ stdout: JSON.stringify({ state: 'MERGED' }), stderr: '' });
+      exec.mockResolvedValueOnce({ stdout: JSON.stringify({ state: 'MERGED' }), stderr: '' });
       
       const merged = await checkPRMerged(1);
       expect(merged).toBe(true);
