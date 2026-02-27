@@ -635,6 +635,32 @@ git-workflow pr-branch update <name>
 - [x] `pr sync` - Sync working branch after PR feedback
 - [x] Auto-rebase onto develop after parent updates
 
+### Bug Fix: pr-branch create should filter by current branch
+
+**Issue:** Currently `pr-branch create` cherry-picks ALL pr-ready commits from config, regardless of which branch they're on.
+
+**Desired:** Only cherry-pick pr-ready commits that exist on the CURRENT working branch.
+
+**Implementation (Option B):**
+
+1. Get current working branch name (`git branch --show-current`)
+2. Get all pr-ready commits from config
+3. Get commit hashes on current branch (`git log --format=%h <branch>`)
+4. Filter: only include pr-ready commits that exist in branch history
+5. Cherry-pick filtered list
+
+**Edge cases:**
+- Detached HEAD → Error: "Must be on a working branch"
+- No pr-ready commits on current branch → Show message: "No pr-ready commits found on this branch"
+
+**Files to modify:**
+- `src/lib/pr-branch.ts` - Update `getPRReadyCommits()` or create new `getPRReadyCommitsOnBranch()`
+
+**Testing:**
+- Unit test: filter works correctly
+- Unit test: detached HEAD error
+- Unit test: empty branch message
+
 ### Technical Details
 
 #### PR Branch Creation
