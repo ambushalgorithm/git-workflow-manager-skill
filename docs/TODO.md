@@ -548,3 +548,130 @@ Possible solutions:
 3. Mock the entire daily module using jest.mock
 
 The code fix is complete and working - only tests need updating.
+
+---
+
+## PR Branch & Creation Workflow
+
+### Problem Statement
+Currently, the workflow requires manual steps to create a PR:
+1. Tag commits as `pr-ready`
+2. Manually cherry-pick to integration branch
+3. Manually create PR with `gh pr create`
+
+We need an automated way to:
+1. Create a dedicated PR branch with only pr-ready commits
+2. Create the PR with proper title/body
+3. Handle PR feedback by updating the PR branch
+
+### Current Branch Hierarchy
+
+**Internal:**
+```
+master → staging → integration → develop → feat/*
+    ↑        ↑           ↑
+  (prod)  (all)    (PR-ready)
+```
+
+**Fork (Open Source):**
+```
+upstream/master → origin/master → origin/staging → origin/integration → origin/develop
+                               ↑                  ↑                    ↑
+                            (all)            (PR-ready)
+```
+
+### Proposed Workflow
+
+#### 1. Create PR Branch
+```bash
+git-workflow pr-branch create <name>
+```
+- Creates a new branch from feature branch
+- Cherry-picks ONLY commits tagged as `pr-ready`
+- Pushes to remote
+- Branch naming: `<feature-name>-pr` or similar
+
+#### 2. Create the PR
+```bash
+git-workflow pr create --title "Feature name" --body "Description"
+```
+- Detects fork vs internal:
+  - Fork (upstream exists): PR to upstream
+  - Internal: PR within origin
+- Uses PR branch created in step 1
+- Opens PR with description
+
+#### 3. Handle PR Feedback
+```bash
+# Checkout feature, sync up
+git-workflow sync staging
+git-workflow sync develop
+git-workflow rebase develop
+
+# Make changes, tag new commits
+git-workflow tag <new-commit> pr-ready
+
+# Update PR branch with new pr-ready commits
+git-workflow pr-branch update <name>
+
+# Push updates (auto-pushes)
+```
+
+### Implementation Plan
+
+#### Phase 1: PR Branch Commands
+- [ ] Add `pr-branch` subcommand
+- [ ] `pr-branch create <name>` - Create PR branch with pr-ready commits
+- [ ] `pr-branch update <name>` - Update PR branch with new pr-ready commits
+- [ ] `pr-branch list` - List existing PR branches
+
+#### Phase 2: PR Creation Commands
+- [ ] Add `pr` subcommand  
+- [ ] `pr create --title <title> --body <body>` - Create PR
+- [ ] Auto-detect upstream vs origin for PR target
+- [ ] Support PR templates
+
+#### Phase 3: PR Sync Commands
+- [ ] `pr sync` - Sync working branch after PR feedback
+- [ ] Auto-rebase onto develop after parent updates
+
+### Technical Details
+
+#### PR Branch Creation
+1. Fetch all remotes
+2. Get list of pr-ready commits from working branch
+3. Create new branch from `integration` (or develop for internal)
+4. Cherry-pick each pr-ready commit
+5. Push to remote
+
+#### Fork Detection Logic
+```typescript
+const hasUpstream = await git.remoteExists('upstream');
+const targetRepo = hasUpstream ? 'upstream' : 'origin';
+const targetBranch = hasUpstream ? 'main' : 'staging';
+```
+
+#### PR Branch Naming
+- Format: `<feature-branch>-pr`
+- Example: `feat/login-pr`
+
+### Commands Reference (After Implementation)
+
+| Command | Description |
+|---------|-------------|
+| `git-workflow pr-branch create <name>` | Create PR branch from pr-ready commits |
+| `git-workflow pr-branch update <name>` | Update PR branch with new pr-ready commits |
+| `git-workflow pr-branch list` | List active PR branches |
+| `git-workflow pr create --title <title> --body <body>` | Create PR |
+| `git-workflow pr sync` | Sync working branch after PR feedback |
+
+### Related Requirements
+
+From REQUIREMENTS-FEATURES.md:
+- PR-001: List commits not yet in staging
+- PR-002: Allow selection of commits to cherry-pick
+- PR-003: Create integration branch with selected commits
+- PR-004: Open PR to upstream (if fork)
+- PR-005: Open PR within same repo (if internal)
+- PR-006: Show diff before PR
+- PR-007: Support PR templates
