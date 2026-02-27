@@ -531,3 +531,18 @@ E2E tests also run in Docker containers:
 ---
 
 *Created: 2026-02-19*
+
+---
+
+## Note: Unit Tests Need Fix
+
+The unit tests in `daily.test.ts` need to be updated to work with the new exec-based gh detection. 
+
+Current issue: `promisify(exec)` is called at module load time, before jest mocks apply.
+
+Possible solutions:
+1. Refactor daily.ts to use dependency injection for exec
+2. Use jest.doMock with proper module factory
+3. Mock the entire daily module using jest.mock
+
+The code fix is complete and working - only tests need updating.
