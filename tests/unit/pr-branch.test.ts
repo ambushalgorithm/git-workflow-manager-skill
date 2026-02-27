@@ -149,4 +149,70 @@ describe('PR Branch', () => {
       expect(commits).toEqual([]);
     });
   });
+
+  describe('generatePRDescription', () => {
+    beforeEach(() => {
+      // Set environment variables for testing
+      process.env.OPENCLAW_MODEL = 'test-model';
+      process.env.OPENCLAW_VERSION = '1.0.0';
+    });
+
+    afterEach(() => {
+      delete process.env.OPENCLAW_MODEL;
+      delete process.env.OPENCLAW_VERSION;
+    });
+
+    it('should generate description from commit messages', async () => {
+      // Setup mocks BEFORE importing
+      const mockGit = gitModule.git as jest.Mock;
+      const mockGetCurrentBranch = gitModule.getCurrentBranch as jest.Mock;
+      const mockLoadConfig = repoModule.loadConfig as jest.Mock;
+      
+      // Mock getCurrentBranch
+      mockGetCurrentBranch.mockResolvedValue('feat/my-feature');
+      
+      // Mock loadConfig for hierarchy
+      mockLoadConfig.mockResolvedValue({
+        repoType: 'internal',
+        defaultBranch: 'master',
+        createdAt: new Date().toISOString(),
+        branchPrefixes: { feature: 'feat/', hotfix: 'hotfix/', release: 'release/' },
+        hierarchy: { integration: 'integration', develop: 'develop' },
+        tracking: { commits: [] }
+      });
+      
+      // Mock git log
+      mockGit.mockResolvedValue('feat: add login\nfix: resolve bug\ndocs: update readme');
+
+      const { generatePRDescription } = await import('../../src/lib/pr-branch');
+      
+      const desc = await generatePRDescription('feat/my-feature-pr');
+      
+      expect(desc).toContain('AI/Vibe-Coded Disclosure');
+      expect(desc).toContain('test-model');
+      expect(desc).toContain('add login');
+    });
+
+    it('should handle empty commits gracefully', async () => {
+      const mockGit = gitModule.git as jest.Mock;
+      const mockGetCurrentBranch = gitModule.getCurrentBranch as jest.Mock;
+      const mockLoadConfig = repoModule.loadConfig as jest.Mock;
+      
+      mockGetCurrentBranch.mockResolvedValue('feat/my-feature');
+      mockLoadConfig.mockResolvedValue({
+        repoType: 'internal',
+        defaultBranch: 'master',
+        createdAt: new Date().toISOString(),
+        hierarchy: { integration: 'integration', develop: 'develop' },
+        tracking: { commits: [] }
+      });
+      mockGit.mockResolvedValue(''); // empty log
+
+      const { generatePRDescription } = await import('../../src/lib/pr-branch');
+      const desc = await generatePRDescription('feat/my-feature-pr');
+      
+      // Empty commits should return empty string
+      expect(desc).toBe('');
+    });
+  });
 });
