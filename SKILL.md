@@ -83,7 +83,7 @@ origin/feat/*
 |---------|-------------|
 | `git-workflow status` | Show current workflow status |
 | `git-workflow daily` | Run daily check and generate report |
-| `git-workflow prs` | List open pull requests |
+| `git-workflow prs` | List open pull requests with optional filters |
 | `git-workflow upstream` | Check upstream status (for forks) |
 | `git-workflow blockers` | Show blockers |
 | `git-workflow attention` | Show branches needing attention |
@@ -166,9 +166,28 @@ git-workflow commits
 # List open pull requests
 git-workflow prs
 
-# Show full status
-git-workflow status
-```
+# Filter by author
+git-workflow prs -a username
+
+# Filter by base branch
+git-workflow prs -b main
+
+# Show merged PRs
+git-workflow prs -s merged
+
+# Combined filters
+git-workflow prs -a username -b main -L 10
+
+### PR Options
+
+| Option | Description |
+|--------|-------------|
+| `-a, --author <user>` | Filter by author |
+| `-A, --assignee <user>` | Filter by assignee |
+| `-b, --base <branch>` | Filter by base branch |
+| `-l, --label <label>` | Filter by label |
+| `-s, --state <state>` | Filter by state: open, closed, merged, all |
+| `-L, --limit <num>` | Limit number of results (default: 30) |
 
 ### Daily Automation
 
