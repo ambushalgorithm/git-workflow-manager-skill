@@ -527,8 +527,8 @@ E2E tests also run in Docker containers:
   docker run --rm git-workflow-test
   ```
 - [ ] Test: `git-workflow prs` to confirm bug is fixed
-- [ ] Add PR filtering options to `daily` command (author, assignee, base, label, state, limit)
-- [ ] Update SKILL.md documentation for daily command options
+- [x] Add PR filtering options to `daily` command (author, assignee, base, label, state, limit)
+- [x] Update SKILL.md documentation for daily command options
 
 ---
 
