@@ -4,8 +4,6 @@ import type { WorkflowConfig } from '../types';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
-const execAsync = promisify(exec);
-
 // Types
 export interface PRInfo {
   number: number
@@ -71,7 +69,7 @@ export interface ReportChannel {
  * Run a command directly (not through git wrapper)
  */
 async function runCmd(cmd: string): Promise<string> {
-  const { stdout } = await execAsync(cmd);
+  const { stdout } = await promisify(exec)(cmd);
   return stdout.trim();
 }
 
