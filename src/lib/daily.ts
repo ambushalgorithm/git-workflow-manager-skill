@@ -429,7 +429,7 @@ export async function showBranchesNeedingAttention(): Promise<BranchAttention[]>
 /**
  * Generate daily report
  */
-export async function generateDailyReport(): Promise<DailyReport> {
+export async function generateDailyReport(options: ListPROptions = {}): Promise<DailyReport> {
   const config = await loadConfig() || {} as WorkflowConfig;
   
   const report: DailyReport = {
@@ -456,7 +456,7 @@ export async function generateDailyReport(): Promise<DailyReport> {
 
   // Get PR status
   try {
-    report.prStatus = await listOpenPRs();
+    report.prStatus = await listOpenPRs(options);
   } catch {
     report.prStatus = [];
   }
@@ -473,8 +473,8 @@ export async function generateDailyReport(): Promise<DailyReport> {
 /**
  * Run daily check (main entry point)
  */
-export async function runDailyCheck(): Promise<DailyReport> {
-  return generateDailyReport();
+export async function runDailyCheck(options: ListPROptions = {}): Promise<DailyReport> {
+  return generateDailyReport(options);
 }
 
 /**

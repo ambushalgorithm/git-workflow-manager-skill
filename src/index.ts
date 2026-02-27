@@ -7,7 +7,7 @@ import { syncStaging, syncDevelop, syncAll } from './lib/sync'
 import { createFeatureBranch, createHotfixBranch, createReleaseBranch, deleteBranch, mergeBranch } from './lib/create'
 import { rebaseOnto } from './lib/rebase'
 import { tagCommit, listPRReadyCommits, listInternalOnlyCommits, listAllTrackedCommits, showStagingIntegrationDiff, removeCommitFromTracking, getCommitInfo } from './lib/commits'
-import { runDailyCheck, generateDailyReport, formatDailyReport, listOpenPRs, checkUpstreamStatus, reportBlockers, showBranchesNeedingAttention, detectNewUpstreamCommits } from './lib/daily'
+import { runDailyCheck, generateDailyReport, formatDailyReport, listOpenPRs, checkUpstreamStatus, reportBlockers, showBranchesNeedingAttention, detectNewUpstreamCommits, type ListPROptions } from './lib/daily'
 import { getMergeStrategy, setMergeStrategy, rebaseBranch, mergeBranchInto, hasConflicts, abortOperation, getBranchUpdateType, smartUpdate, fastForward, updateChildBranches } from './lib/updates'
 
 const program = new Command()
@@ -315,9 +315,23 @@ program
 program
   .command('daily')
   .description('Run daily check and generate report')
-  .action(async () => {
+  .option('-a, --author <username>', 'Filter PRs by author')
+  .option('-A, --assignee <username>', 'Filter PRs by assignee')
+  .option('-b, --base <branch>', 'Filter PRs by base branch')
+  .option('-l, --label <label>', 'Filter PRs by label')
+  .option('-s, --state <state>', 'Filter PRs by state: {open|closed|merged|all}', 'open')
+  .option('-L, --limit <number>', 'Limit number of PRs', '30')
+  .action(async (options) => {
     try {
-      const report = await runDailyCheck()
+      const prOptions: ListPROptions = {
+        author: options.author,
+        assignee: options.assignee,
+        base: options.base,
+        label: options.label,
+        state: options.state as 'open' | 'closed' | 'merged' | 'all',
+        limit: parseInt(options.limit, 10),
+      }
+      const report = await runDailyCheck(prOptions)
       console.log(formatDailyReport(report))
     } catch (error: any) {
       console.error('Daily check failed:', error.message)
