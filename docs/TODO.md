@@ -675,3 +675,58 @@ From REQUIREMENTS-FEATURES.md:
 - PR-005: Open PR within same repo (if internal)
 - PR-006: Show diff before PR
 - PR-007: Support PR templates
+
+### Testing Plan
+
+#### Unit Tests
+- Test `pr-branch create`:
+  - No pr-ready commits → error
+  - Creates branch from correct parent (integration/develop)
+  - Cherry-picks correct commits
+  - Handles cherry-pick conflicts
+
+- Test `pr-branch update`:
+  - Adds new pr-ready commits only
+  - Preserves existing commits
+  - Handles force push
+
+- Test `pr create`:
+  - Fork mode → targets upstream
+  - Internal mode → targets origin
+  - Uses correct base branch
+  - Parses title/body correctly
+
+- Test fork detection logic:
+  - With upstream remote → fork mode
+  - Without upstream remote → internal mode
+
+#### Integration Tests (E2E in Docker)
+- Full workflow test:
+  1. Create feature branch
+  2. Make commits, tag some as pr-ready
+  3. Run `pr-branch create`
+  4. Verify PR branch has correct commits
+  5. Run `pr create`
+  6. Verify PR opened to correct target
+  7. Make PR feedback changes
+  8. Run `pr-branch update`
+  9. Verify PR branch updated
+
+#### Test Execution
+```bash
+# Build locally
+npm run build
+
+# Run unit tests locally (for quick feedback)
+npm test
+
+# Run E2E tests in Docker on QA1
+ssh deploy@100.75.20.121
+cd ~/Projects/openclaw-skills-development/git-workflow-manager-skill
+docker build -t git-workflow-test .
+docker run --rm git-workflow-test npm test
+```
+
+#### Coverage Target
+- Maintain ≥95% code coverage
+- New PR-related code should have ≥90% coverage
