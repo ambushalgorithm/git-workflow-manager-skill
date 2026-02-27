@@ -62,9 +62,27 @@ export async function isFork(): Promise<boolean> {
 
 /**
  * Get target repo and branch for PR
+ * Uses config defaultBaseBranch if set, otherwise auto-detects
  */
 export async function getPRTarget(): Promise<{ owner: string; repo: string; baseBranch: string }> {
   const fork = await isFork();
+  const config = await loadConfig() as WorkflowConfig;
+  
+  // Use configured base branch or auto-detect
+  const configuredBase = config.defaultBaseBranch;
+  
+  // Auto-detect default branch from origin if not configured
+  let autoDetectedBase = 'main';
+  if (!configuredBase) {
+    try {
+      const ref = await git(['symbolic-ref', 'refs/remotes/origin/HEAD']);
+      autoDetectedBase = ref.replace('refs/remotes/origin/', '').trim();
+    } catch {
+      autoDetectedBase = 'main';
+    }
+  }
+  
+  const baseBranch = configuredBase || autoDetectedBase;
   
   if (fork) {
     // Get upstream info
@@ -76,7 +94,7 @@ export async function getPRTarget(): Promise<{ owner: string; repo: string; base
     return {
       owner: owner,
       repo: match[3],
-      baseBranch: 'main'
+      baseBranch
     };
   } else {
     // Get origin info
@@ -88,7 +106,7 @@ export async function getPRTarget(): Promise<{ owner: string; repo: string; base
     return {
       owner: owner,
       repo: match[3],
-      baseBranch: 'staging'
+      baseBranch
     };
   }
 }
@@ -231,7 +249,17 @@ export async function generatePRDescription(branchName: string): Promise<string>
   // The branchName is the PR branch name, but we need the working branch commits
   const config = await loadConfig() as WorkflowConfig;
   const hierarchy = config.hierarchy || { integration: 'integration', develop: 'develop', main: 'main' };
-  const baseBranch = hierarchy.main || 'main'; // Use main as the base for comparison
+  
+  // Use configured baseBranch or get from target
+  let baseBranch = config.defaultBaseBranch;
+  if (!baseBranch) {
+    try {
+      const ref = await git(['symbolic-ref', 'refs/remotes/origin/HEAD']);
+      baseBranch = ref.replace('refs/remotes/origin/', '').trim();
+    } catch {
+      baseBranch = hierarchy.main || 'main';
+    }
+  }
   
   // Get current working branch (the feature branch)
   const workingBranch = await getCurrentBranch();

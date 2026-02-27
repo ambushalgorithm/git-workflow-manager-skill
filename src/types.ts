@@ -33,6 +33,7 @@ export interface WorkflowConfig {
   hierarchy?: BranchHierarchy
   tracking?: TrackingConfig
   mergeStrategy?: MergeStrategyConfig
+  defaultBaseBranch?: string // Optional: PR base branch (auto-detected if not set)
 }
 
 export interface BranchHierarchy {
