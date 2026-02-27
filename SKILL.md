@@ -84,7 +84,7 @@ origin/feat/*
 | `git-workflow pr-branch create <name>` | Create PR branch from pr-ready commits |
 | `git-workflow pr-branch update <name>` | Update PR branch with new pr-ready commits |
 | `git-workflow pr-branch list` | List active PR branches |
-| `git-workflow pr create <branch>` | Create a PR |
+| `git-workflow pr create <branch>` | Create a PR (auto-generates description) |
 | `git-workflow pr sync [branch]` | Sync working branch after PR feedback |
 
 | Daily & Reporting | |

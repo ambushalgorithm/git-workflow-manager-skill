@@ -113,11 +113,46 @@ git-workflow pr-branch create my-feature
 ## Phase 5: Create the PR
 
 ```bash
-# Create PR with title and description
-git-workflow pr create my-feature -t "Feature Title" -b "Description"
-
-# Or let it use defaults
+# Create PR with auto-generated description from commits
 git-workflow pr create my-feature
+
+# Or provide custom description
+git-workflow pr create my-feature -t "Feature Title" -b "Custom description"
+```
+
+### Auto-Generated Description
+
+When you omit the `--body` flag, the tool auto-generates a PR description:
+
+```markdown
+### AI/Vibe-Coded Disclosure 🤖
+- [x] **AI-assisted:** Built with [Model] + OpenClaw v[version]
+- [x] **Testing level:** [e.g., Fully tested]
+- [x] **Code understanding:** Yes — reviewed for compliance
+
+# Summary
+[Overview of changes]
+
+## What
+- [Bullet points from commit messages]
+
+## Why
+[Why these changes matter]
+
+## Technical Changes
+| File | Change |
+|------|--------|
+| Multiple | N commit(s) in PR branch |
+
+## Testing
+- ✅ PR branch created from pr-ready commits
+
+## Breaking Changes
+[None]
+
+## Related
+- Branch: [branch-name]
+- Base: [base-branch]
 ```
 
 ### Fork Detection

@@ -607,15 +607,16 @@ const pr = program
 
 pr
   .command('create')
-  .description('Create a PR')
+  .description('Create a PR (auto-generates description from commits if --body not provided)')
   .argument('<branch>', 'PR branch name (without -pr suffix)')
   .option('-t, --title <title>', 'PR title')
-  .option('-b, --body <body>', 'PR body/description')
+  .option('-b, --body <body>', 'PR body/description (auto-generated if omitted)')
   .option('-d, --draft', 'Create as draft PR')
   .action(async (branch, options) => {
     try {
       const title = options.title || `PR: ${branch}`;
-      const body = options.body || `Created via git-workflow`;
+      // Pass null to trigger auto-generation from commits
+      const body = options.body || null;
       await createPR(title, body, `${branch}-pr`)
     } catch (error: any) {
       console.error('Error:', error.message)
