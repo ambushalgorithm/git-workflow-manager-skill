@@ -29,11 +29,6 @@ export async function getPRReadyCommitsOnBranch(): Promise<string[]> {
     throw new Error('Detached HEAD. Must be on a working branch to create PR branch.');
   }
   
-  // 2. Don't allow PR branches as source
-  if (currentBranch.endsWith('-pr')) {
-    throw new Error(`Cannot run from PR branch "${currentBranch}". Checkout your feature branch first.`);
-  }
-  
   // 3. Get all pr-ready commits from config
   const allPRReady = await getPRReadyCommits();
   
@@ -74,21 +69,25 @@ export async function getPRTarget(): Promise<{ owner: string; repo: string; base
   if (fork) {
     // Get upstream info
     const url = await git(['remote', 'get-url', 'upstream']);
-    const match = url.match(/github\.com[/:]([^\/]+)\/([^\/]+)/);
+    // Handle both HTTPS and SSH formats: https://github.com/owner/repo or git@github.com-owner:owner/repo
+    const match = url.match(/(?:github\.com[/:]([^/:]+)|:([^/]+))\/([^\/]+)/);
     if (!match) throw new Error('Could not parse upstream URL');
+    const owner = match[1] || match[2];
     return {
-      owner: match[1],
-      repo: match[2],
+      owner: owner,
+      repo: match[3],
       baseBranch: 'main'
     };
   } else {
     // Get origin info
     const url = await git(['remote', 'get-url', 'origin']);
-    const match = url.match(/github\.com[/:]([^\/]+)\/([^\/]+)/);
+    // Handle both HTTPS and SSH formats
+    const match = url.match(/(?:github\.com[/:]([^/:]+)|:([^/]+))\/([^\/]+)/);
     if (!match) throw new Error('Could not parse origin URL');
+    const owner = match[1] || match[2];
     return {
-      owner: match[1],
-      repo: match[2],
+      owner: owner,
+      repo: match[3],
       baseBranch: 'staging'
     };
   }
@@ -121,7 +120,8 @@ export async function createPRBranch(name: string, fromBranch?: string): Promise
     throw new Error(`Parent branch "${parentBranch}" does not exist`);
   }
   
-  const prBranchName = `${name}-pr`;
+  // Determine PR branch name - don't double -pr if already present
+  const prBranchName = name.endsWith('-pr') ? name : `${name}-pr`;
   
   // Create and checkout new branch
   await git(['checkout', '-b', prBranchName, parentBranch]);
@@ -159,7 +159,8 @@ export async function updatePRBranch(name: string): Promise<void> {
   // Get pr-ready commits on current branch
   const prReadyCommits = await getPRReadyCommitsOnBranch();
   
-  const prBranchName = `${name}-pr`;
+  // Determine PR branch name - don't double -pr if already present
+  const prBranchName = name.endsWith('-pr') ? name : `${name}-pr`;
   
   if (!(await branchExists(prBranchName))) {
     throw new Error(`PR branch "${prBranchName}" does not exist. Create it first with "git-workflow pr-branch create ${name}"`);
@@ -223,15 +224,25 @@ function parseCommitType(message: string): string {
 
 /**
  * Generate PR description from commit messages
+ * Uses the current working branch (not the PR branch)
  */
 export async function generatePRDescription(branchName: string): Promise<string> {
-  // Get commits on this branch (from integration or develop)
+  // Get commits from the working branch (feature branch), not the PR branch
+  // The branchName is the PR branch name, but we need the working branch commits
   const config = await loadConfig() as WorkflowConfig;
-  const hierarchy = config.hierarchy || { integration: 'integration', develop: 'develop' };
-  const baseBranch = hierarchy.integration || 'integration';
+  const hierarchy = config.hierarchy || { integration: 'integration', develop: 'develop', main: 'main' };
+  const baseBranch = hierarchy.main || 'main'; // Use main as the base for comparison
   
-  // Get commit messages
-  const log = await git(['log', '--format=%s', `${branchName} ^${baseBranch}`]);
+  // Get current working branch (the feature branch)
+  const workingBranch = await getCurrentBranch();
+  
+  if (!workingBranch) {
+    return '';
+  }
+  
+  // Get commit messages from working branch vs base (main)
+  // Syntax: origin/main..workingBranch
+  const log = await git(['log', '--format=%s', `origin/${baseBranch}..${workingBranch}`]);
   const commits = log.trim().split('\n').filter(Boolean);
   
   if (commits.length === 0) {

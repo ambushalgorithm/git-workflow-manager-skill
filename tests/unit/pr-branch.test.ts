@@ -101,12 +101,30 @@ describe('PR Branch', () => {
       );
     });
 
-    it('should throw error when run from PR branch', async () => {
+    it('should allow branches ending with -pr if not remote PR branch', async () => {
+      // Local branch ending with -pr should now be allowed
       (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('feat/my-feature-pr');
+      
+      (repoModule.loadConfig as jest.Mock).mockResolvedValue({
+        repoType: 'internal',
+        defaultBranch: 'master',
+        createdAt: new Date().toISOString(),
+        branchPrefixes: { feature: 'feat/', hotfix: 'hotfix/', release: 'release/' },
+        tracking: {
+          commits: [
+            { hash: 'abc123', status: 'pr-ready', message: 'feat: add login', tags: [], createdAt: '' },
+          ]
+        }
+      });
+      
+      // Branch log contains the commit
+      (gitModule.git as jest.Mock)
+        .mockResolvedValueOnce('abc123');
 
-      await expect(getPRReadyCommitsOnBranch()).rejects.toThrow(
-        'Cannot run from PR branch "feat/my-feature-pr". Checkout your feature branch first.'
-      );
+      const commits = await getPRReadyCommitsOnBranch();
+      
+      // Should include the commit since it's on the branch
+      expect(commits).toEqual(['abc123']);
     });
 
     it('should return empty array when no pr-ready commits exist', async () => {
