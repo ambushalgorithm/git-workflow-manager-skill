@@ -679,6 +679,8 @@ From REQUIREMENTS-FEATURES.md:
 ### Testing Plan
 
 #### Unit Tests
+Write unit tests locally, then run in Docker on QA1 (see [Testing](#running-tests-on-qa1) below).
+
 - Test `pr-branch create`:
   - No pr-ready commits → error
   - Creates branch from correct parent (integration/develop)
@@ -700,7 +702,9 @@ From REQUIREMENTS-FEATURES.md:
   - With upstream remote → fork mode
   - Without upstream remote → internal mode
 
-#### Integration Tests (E2E in Docker)
+#### Integration Tests (E2E)
+Run E2E tests in Docker on QA1 (see [E2E Testing](#e2e-testing) below).
+
 - Full workflow test:
   1. Create feature branch
   2. Make commits, tag some as pr-ready
@@ -711,21 +715,6 @@ From REQUIREMENTS-FEATURES.md:
   7. Make PR feedback changes
   8. Run `pr-branch update`
   9. Verify PR branch updated
-
-#### Test Execution
-```bash
-# Build locally
-npm run build
-
-# Run unit tests locally (for quick feedback)
-npm test
-
-# Run E2E tests in Docker on QA1
-ssh deploy@100.75.20.121
-cd ~/Projects/openclaw-skills-development/git-workflow-manager-skill
-docker build -t git-workflow-test .
-docker run --rm git-workflow-test npm test
-```
 
 #### Coverage Target
 - Maintain ≥95% code coverage
