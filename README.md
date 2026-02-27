@@ -128,6 +128,16 @@ git clone https://github.com/ambushalgorithm/git-workflow-manager-skill.git ~/pa
 npm install -g git-workflow-manager
 ```
 
+## Updating
+
+After pulling changes, rebuild and reinstall:
+
+```bash
+git pull
+npm run build
+npm install -g --force .
+```
+
 ## License
 
 MIT
