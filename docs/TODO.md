@@ -467,4 +467,67 @@ E2E tests also run in Docker containers:
 
 ---
 
+## Post-Launch Bug Fixes
+
+### Bug: gh CLI detection fails (Phase 4)
+
+**Issue:** `git-workflow prs` fails with "GitHub CLI (gh) not found"
+
+**Root Cause:** In `src/lib/daily.ts`, the `detectGitCLI()` and `ghCommand()` functions call `git(['gh', ...])` which the git wrapper in `lib/git.ts` prepends with `git`, resulting in `git gh --version` instead of just `gh --version`. Since `gh` (GitHub CLI) is not a git subcommand, it fails.
+
+**Fix:** Update `daily.ts` to run gh commands directly via Node's `exec` (bypassing the git wrapper):
+
+1. Add direct exec helper in `daily.ts`:
+   ```typescript
+   import { exec } from 'child_process';
+   import { promisify } from 'util';
+   const execAsync = promisify(exec);
+
+   async function runCmd(cmd: string): Promise<string> {
+     const { stdout } = await execAsync(cmd);
+     return stdout.trim();
+   }
+   ```
+
+2. Update `detectGitCLI()` to use direct exec:
+   ```typescript
+   export async function detectGitCLI(): Promise<boolean> {
+     try {
+       await runCmd('gh --version');
+       return true;
+     } catch {
+       return false;
+     }
+   }
+   ```
+
+3. Update `ghCommand()` to bypass git wrapper:
+   ```typescript
+   async function ghCommand(args: string[]): Promise<string> {
+     try {
+       return await runCmd(`gh ${args.join(' ')}`);
+     } catch (error: any) {
+       throw new Error(`gh command failed: ${error.message}`);
+     }
+   }
+   ```
+
+**Next Steps:**
+- [x] Fix daily.ts to run gh directly
+- [ ] Update unit tests to cover gh detection fix (needs jest mock fix - different approach required)
+- [ ] Update E2E tests to cover gh detection fix (E2E test doesn't use gh, no changes needed)
+- [x] Rebuild: `npm run build`
+- [ ] Commit & push the fix
+- [ ] On QA1: Run tests in Docker:
+  ```bash
+  ssh deploy@100.75.20.121
+  cd ~/Projects/openclaw-skills-development/git-workflow-manager
+  git pull
+  docker build -t git-workflow-test .
+  docker run --rm git-workflow-test
+  ```
+- [ ] Test: `git-workflow prs` to confirm bug is fixed
+
+---
+
 *Created: 2026-02-19*

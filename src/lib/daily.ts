@@ -1,6 +1,10 @@
 import { git } from './git';
 import { loadConfig } from './repo';
 import type { WorkflowConfig } from '../types';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 // Types
 export interface PRInfo {
@@ -64,11 +68,19 @@ export interface ReportChannel {
 }
 
 /**
+ * Run a command directly (not through git wrapper)
+ */
+async function runCmd(cmd: string): Promise<string> {
+  const { stdout } = await execAsync(cmd);
+  return stdout.trim();
+}
+
+/**
  * Detect if gh CLI is available
  */
 export async function detectGitCLI(): Promise<boolean> {
   try {
-    await git(['gh', '--version']);
+    await runCmd('gh --version');
     return true;
   } catch {
     return false;
@@ -80,7 +92,7 @@ export async function detectGitCLI(): Promise<boolean> {
  */
 async function ghCommand(args: string[]): Promise<string> {
   try {
-    return await git(['gh', ...args]);
+    return await runCmd(`gh ${args.join(' ')}`);
   } catch (error: any) {
     throw new Error(`gh command failed: ${error.message}`);
   }
