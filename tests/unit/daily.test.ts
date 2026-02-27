@@ -8,8 +8,24 @@ jest.mock('../../src/lib/repo', () => ({
   saveConfig: jest.fn(),
 }));
 
+// Mock child_process for gh CLI commands
+jest.mock('child_process', () => ({
+  exec: jest.fn(),
+}));
+
+import { exec } from 'child_process';
 import * as gitModule from '../../src/lib/git';
 import * as repoModule from '../../src/lib/repo';
+
+// Helper to set up gh as available in exec mock
+const setupGhAvailable = () => {
+  (exec as jest.Mock).mockResolvedValue({ stdout: 'gh version 2.40.0', stderr: '' });
+};
+
+// Helper to set up gh as unavailable in exec mock  
+const setupGhUnavailable = () => {
+  (exec as jest.Mock).mockRejectedValue(new Error('command not found'));
+};
 import { 
   detectGitCLI, 
   listOpenPRs, 
@@ -32,13 +48,13 @@ describe('Daily Automation', () => {
 
   describe('detectGitCLI', () => {
     it('should return true when gh is available', async () => {
-      (gitModule.git as jest.Mock).mockResolvedValue('gh version 2.40.0');
+      setupGhAvailable();
       const result = await detectGitCLI();
       expect(result).toBe(true);
     });
 
     it('should return false when gh is not available', async () => {
-      (gitModule.git as jest.Mock).mockRejectedValue(new Error('command not found'));
+      setupGhUnavailable();
       const result = await detectGitCLI();
       expect(result).toBe(false);
     });
@@ -46,25 +62,23 @@ describe('Daily Automation', () => {
 
   describe('listOpenPRs', () => {
     it('should throw when gh not available', async () => {
-      (gitModule.git as jest.Mock).mockRejectedValue(new Error('command not found'));
+      setupGhUnavailable();
       await expect(listOpenPRs()).rejects.toThrow('GitHub CLI');
     });
 
     it('should return empty array when not in github repo', async () => {
-      (gitModule.git as jest.Mock)
-        .mockResolvedValueOnce('gh version 2.40.0')
-        .mockRejectedValueOnce(new Error('could not resolve'));
+      setupGhAvailable();
+      (exec as jest.Mock).mockRejectedValueOnce(new Error('could not resolve'));
       
       const prs = await listOpenPRs();
       expect(prs).toEqual([]);
     });
 
     it('should parse PR list correctly', async () => {
-      (gitModule.git as jest.Mock)
-        .mockResolvedValueOnce('gh version 2.40.0')
-        .mockResolvedValueOnce(JSON.stringify([
-          { number: 1, title: 'Test PR', state: 'OPEN', headRefName: 'feat/test', baseRefName: 'main', url: 'https://github.com/test/repo/pull/1', mergeable: true, statusCheckRollup: [] }
-        ]));
+      setupGhAvailable();
+      (exec as jest.Mock).mockResolvedValueOnce({ stdout: JSON.stringify([
+        { number: 1, title: 'Test PR', state: 'OPEN', headRefName: 'feat/test', baseRefName: 'main', url: 'https://github.com/test/repo/pull/1', mergeable: true, statusCheckRollup: [] }
+      ]), stderr: '' });
       
       const prs = await listOpenPRs();
       expect(prs).toHaveLength(1);
@@ -76,17 +90,16 @@ describe('Daily Automation', () => {
 
   describe('getPRDetails', () => {
     it('should return null when gh not available', async () => {
-      (gitModule.git as jest.Mock).mockRejectedValue(new Error('command not found'));
+      setupGhUnavailable();
       const details = await getPRDetails(1);
       expect(details).toBeNull();
     });
 
     it('should return PR details', async () => {
-      (gitModule.git as jest.Mock)
-        .mockResolvedValueOnce('gh version 2.40.0')
-        .mockResolvedValueOnce(JSON.stringify({
-          number: 1, title: 'Test PR', state: 'OPEN', headRefName: 'feat/test', baseRefName: 'main', url: 'https://github.com/test/repo/pull/1', mergeable: true, author: { login: 'testuser' }, createdAt: '2024-01-01', updatedAt: '2024-01-02', reviewers: [], labels: [], isDraft: false
-        }));
+      setupGhAvailable();
+      (exec as jest.Mock).mockResolvedValueOnce({ stdout: JSON.stringify({
+        number: 1, title: 'Test PR', state: 'OPEN', headRefName: 'feat/test', baseRefName: 'main', url: 'https://github.com/test/repo/pull/1', mergeable: true, author: { login: 'testuser' }, createdAt: '2024-01-01', updatedAt: '2024-01-02', reviewers: [], labels: [], isDraft: false
+      }), stderr: '' });
       
       const details = await getPRDetails(1);
       expect(details).not.toBeNull();
@@ -97,15 +110,14 @@ describe('Daily Automation', () => {
 
   describe('checkPRMerged', () => {
     it('should return false when gh not available', async () => {
-      (gitModule.git as jest.Mock).mockRejectedValue(new Error('command not found'));
+      setupGhUnavailable();
       const merged = await checkPRMerged(1);
       expect(merged).toBe(false);
     });
 
     it('should return true when PR is merged', async () => {
-      (gitModule.git as jest.Mock)
-        .mockResolvedValueOnce('gh version 2.40.0')
-        .mockResolvedValueOnce(JSON.stringify({ state: 'MERGED' }));
+      setupGhAvailable();
+      (exec as jest.Mock).mockResolvedValueOnce({ stdout: JSON.stringify({ state: 'MERGED' }), stderr: '' });
       
       const merged = await checkPRMerged(1);
       expect(merged).toBe(true);
@@ -312,7 +324,7 @@ describe('Stale Branches Detection', () => {
       .mockResolvedValueOnce('105');
     
     // gh not available
-    (gitModule.git as jest.Mock).mockRejectedValue(new Error('no gh'));
+    setupGhUnavailable();
     
     const status = await checkUpstreamStatus();
     expect(status.newCommits).toBe(5);
@@ -367,7 +379,7 @@ describe('Additional Daily Coverage', () => {
       upstreamRemote: 'upstream'
     });
     // gh not available for PR check
-    (gitModule.git as jest.Mock).mockRejectedValue(new Error('no gh'));
+    setupGhUnavailable();
     
     const status = await checkUpstreamStatus();
     expect(status).toBeDefined();
@@ -457,7 +469,7 @@ describe('More Daily Coverage', () => {
 
   it('reportBlockers should handle errors gracefully', async () => {
     // gh not available
-    (gitModule.git as jest.Mock).mockRejectedValue(new Error('no gh'));
+    setupGhUnavailable();
     (repoModule.loadConfig as jest.Mock).mockResolvedValue({});
     
     const blockers = await reportBlockers();
@@ -529,7 +541,7 @@ describe('More Daily Edge Cases', () => {
       .mockResolvedValueOnce(new Date(2020, 0, 1).toISOString());
     
     // No gh
-    (gitModule.git as jest.Mock).mockRejectedValue(new Error('no gh'));
+    setupGhUnavailable();
     (repoModule.loadConfig as jest.Mock).mockResolvedValue({});
     
     const blockers = await reportBlockers();
@@ -643,7 +655,7 @@ describe('Final Coverage Tests', () => {
       .mockResolvedValueOnce('')
       .mockRejectedValueOnce(new Error('no gh'));
     // gh fails later too
-    (gitModule.git as jest.Mock).mockRejectedValue(new Error('no gh'));
+    setupGhUnavailable();
     (repoModule.loadConfig as jest.Mock).mockResolvedValue({});
     
     const blockers = await reportBlockers();
@@ -694,7 +706,7 @@ describe('Targeted Daily Coverage', () => {
       .mockResolvedValueOnce(new Date(Date.now() + 86400000).toISOString()) // tomorrow
       .mockResolvedValueOnce(new Date(Date.now() + 86400000).toISOString());
     // No gh available
-    (gitModule.git as jest.Mock).mockRejectedValue(new Error('no gh'));
+    setupGhUnavailable();
     (repoModule.loadConfig as jest.Mock).mockResolvedValue({});
     
     const blockers = await reportBlockers();
@@ -722,7 +734,7 @@ describe('Deep Daily Edge Cases', () => {
       .mockResolvedValueOnce('feature-a')
       .mockResolvedValueOnce(new Date(2020, 0, 1).toISOString()); // old date -> stale
     // gh check fails
-    (gitModule.git as jest.Mock).mockRejectedValue(new Error('no gh'));
+    setupGhUnavailable();
     (repoModule.loadConfig as jest.Mock).mockResolvedValue({});
     
     const blockers = await reportBlockers();
