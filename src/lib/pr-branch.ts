@@ -282,8 +282,14 @@ export async function generatePRDescription(branchName: string): Promise<string>
     feat: [],
     fix: [],
     docs: [],
+    style: [],
     refactor: [],
+    perf: [],
     test: [],
+    chore: [],
+    ci: [],
+    build: [],
+    revert: [],
     other: []
   };
   
