@@ -614,7 +614,8 @@ pr
   .option('-d, --draft', 'Create as draft PR')
   .action(async (branch, options) => {
     try {
-      const title = options.title || `PR: ${branch}`;
+      // Use branch name exactly as provided (e.g., feat/my-fancy-new-button)
+      const title = options.title || branch;
       // Pass null to trigger auto-generation from commits
       const body = options.body || null;
       await createPR(title, body, `${branch}-pr`)
