@@ -366,8 +366,9 @@ ${why.join(' ') || 'Improvements and enhancements to the codebase.'}
 /**
  * Create a PR using gh CLI
  * If no body provided, auto-generates from commit messages
+ * If dryRun is true, just prints the template without creating PR
  */
-export async function createPR(title: string, body: string | null, prBranchName: string): Promise<void> {
+export async function createPR(title: string, body: string | null, prBranchName: string, dryRun: boolean = false): Promise<void> {
   const target = await getPRTarget();
   
   // Auto-generate description if not provided
@@ -376,6 +377,16 @@ export async function createPR(title: string, body: string | null, prBranchName:
   console.log(`Creating PR:`);
   console.log(`  From: ${prBranchName}`);
   console.log(`  To: ${target.owner}/${target.repo}:${target.baseBranch}`);
+  
+  if (dryRun) {
+    console.log('\n=== PR Preview (not created) ===\n');
+    console.log(`Title: ${title}`);
+    console.log(`\nBody:\n${description}`);
+    console.log('\n=== End Preview ===\n');
+    console.log('To create the PR, run:');
+    console.log(`  git-workflow pr create ${prBranchName.replace('-pr', '')} -t "${title}" -b "<paste body above>"`);
+    return;
+  }
   
   // Check if gh is available
   try {

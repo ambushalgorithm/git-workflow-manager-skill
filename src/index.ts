@@ -612,13 +612,16 @@ pr
   .option('-t, --title <title>', 'PR title')
   .option('-b, --body <body>', 'PR body/description (auto-generated if omitted)')
   .option('-d, --draft', 'Create as draft PR')
+  .option('--dry-run', 'Preview PR without creating it')
   .action(async (branch, options) => {
     try {
       // Use branch name exactly as provided (e.g., feat/my-fancy-new-button)
       const title = options.title || branch;
       // Pass null to trigger auto-generation from commits
       const body = options.body || null;
-      await createPR(title, body, `${branch}-pr`)
+      // Strip -pr suffix for display if present
+      const prBranchName = branch.endsWith('-pr') ? branch : `${branch}-pr`;
+      await createPR(title, body, prBranchName, options.dryRun || false)
     } catch (error: any) {
       console.error('Error:', error.message)
       process.exit(1)
