@@ -116,11 +116,8 @@ git-workflow pr-branch create my-feature
 # Preview PR template (fill in manually or with AI)
 git-workflow pr create my-feature --dry-run
 
-# Create PR with auto-generated description from commits
-git-workflow pr create my-feature
-
-# Or provide custom description
-git-workflow pr create my-feature -t "Feature Title" -b "Custom description"
+# Use the template, fill it out and use it to create the PR
+git-workflow pr create my-feature -t "Feature Title From Template" -b "Custom description based on template"
 ```
 
 ### PR Template (--dry-run)
