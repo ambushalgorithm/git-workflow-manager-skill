@@ -248,7 +248,7 @@ export async function generatePRTemplate(): Promise<string> {
   const openclawVersion = process.env.OPENCLAW_VERSION || '[version]';
   
   return `### AI/Vibe-Coded Disclosure 🤖
-- [x] **AI-assisted:** Built with ${model} + OpenClaw v${openclawVersion}
+- [x] **AI-assisted:** Built with ${model} + [AI-agent e.g., OpenClaw] ${openclawVersion}
 - [x] **Testing level:** [e.g., Fully tested (N tests)]
 - [x] **Code understanding:** Yes — reviewed for compliance with [Project] standards
 
