@@ -319,6 +319,7 @@ program
   .option('-a, --author <username>', 'Filter PRs by author')
   .option('-A, --assignee <username>', 'Filter PRs by assignee')
   .option('-b, --base <branch>', 'Filter PRs by base branch')
+  .option('-B, --base-branch <branch>', 'Compare branches against branch (default: develop)')
   .option('-l, --label <label>', 'Filter PRs by label')
   .option('-s, --state <state>', 'Filter PRs by state: {open|closed|merged|all}', 'open')
   .option('-L, --limit <number>', 'Limit number of PRs', '30')
@@ -328,6 +329,7 @@ program
         author: options.author,
         assignee: options.assignee,
         base: options.base,
+        baseBranch: options.baseBranch,
         label: options.label,
         state: options.state as 'open' | 'closed' | 'merged' | 'all',
         limit: parseInt(options.limit, 10),

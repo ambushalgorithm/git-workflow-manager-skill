@@ -120,6 +120,7 @@ export interface ListPROptions {
   label?: string;
   state?: 'open' | 'closed' | 'merged' | 'all';
   limit?: number;
+  baseBranch?: string; // For branch comparison (default: develop)
 }
 
 export async function listOpenPRs(options: ListPROptions = {}): Promise<PRInfo[]> {
@@ -128,7 +129,7 @@ export async function listOpenPRs(options: ListPROptions = {}): Promise<PRInfo[]
   }
 
   const args = ['pr', 'list', '--json', 'number,title,state,headRefName,baseRefName,url,mergeable,statusCheckRollup'];
-  
+
   if (options.author) args.push('--author', options.author);
   if (options.assignee) args.push('--assignee', options.assignee);
   if (options.base) args.push('--base', options.base);
@@ -139,7 +140,7 @@ export async function listOpenPRs(options: ListPROptions = {}): Promise<PRInfo[]
   try {
     const output = await ghCommand(args);
     const prs = JSON.parse(output);
-    
+
     return prs.map((pr: any) => ({
       number: pr.number,
       title: pr.title,
@@ -170,7 +171,7 @@ export async function getPRDetails(prNumber: number): Promise<PRDetail | null> {
   try {
     const output = await ghCommand(['pr', 'view', prNumber.toString(), '--json', 'number,title,state,headRefName,baseRefName,url,mergeable,author,createdAt,updatedAt,reviewers,labels,isDraft']);
     const pr = JSON.parse(output);
-    
+
     return {
       number: pr.number,
       title: pr.title,
@@ -223,10 +224,10 @@ export async function detectNewUpstreamCommits(): Promise<number> {
     const localCount = await git(['rev-list', '--count', config.defaultBranch]);
     // Get upstream default branch count
     const upstreamCount = await git(['rev-list', '--count', `${config.upstreamRemote}/${config.defaultBranch}`]);
-    
+
     const local = parseInt(localCount.trim(), 10) || 0;
     const upstream = parseInt(upstreamCount.trim(), 10) || 0;
-    
+
     return Math.max(0, upstream - local);
   } catch {
     return 0;
@@ -265,31 +266,33 @@ export async function checkUpstreamStatus(): Promise<UpstreamStatus> {
 
 /**
  * Get local branches with their status
+ * @param baseBranch Branch to compare against (default: develop)
  */
-export async function getBranchStatus(): Promise<BranchInfo[]> {
+export async function getBranchStatus(baseBranch: string = 'develop'): Promise<BranchInfo[]> {
   const branches: BranchInfo[] = [];
-  
+
   try {
     const output = await git(['for-each-ref', '--format=%(refname:short) %(creatordate:iso) %(upstream:short)', 'refs/heads/']);
     const lines = output.trim().split('\n').filter(Boolean);
-    
+
     for (const line of lines) {
       const [branch, date] = line.split(' ');
-      if (!branch || branch === 'main' || branch === 'master' || branch === 'develop' || branch === 'staging' || branch === 'integration') {
+      // Skip protected branches and PR branches (*-pr)
+      if (!branch || branch === 'main' || branch === 'master' || branch === 'develop' || branch === 'staging' || branch === 'integration' || branch.endsWith('-pr')) {
         continue;
       }
-      
-      // Check ahead/behind
+
+      // Check ahead/behind against base branch (not upstream)
       let ahead = 0, behind = 0;
       try {
-        const revInfo = await git(['rev-list', '--left-right', '--count', `${branch}...@{u}`]);
+        const revInfo = await git(['rev-list', '--left-right', '--count', `${branch}...origin/${baseBranch}`]);
         const [a, b] = revInfo.trim().split(/\s+/);
         ahead = parseInt(a, 10) || 0;
         behind = parseInt(b, 10) || 0;
       } catch {
-        // No upstream tracking
+        // Branch may not be comparable
       }
-      
+
       branches.push({
         branch,
         ahead,
@@ -300,7 +303,7 @@ export async function getBranchStatus(): Promise<BranchInfo[]> {
   } catch {
     // Ignore
   }
-  
+
   return branches;
 }
 
@@ -309,18 +312,18 @@ export async function getBranchStatus(): Promise<BranchInfo[]> {
  */
 async function detectConflictBranches(): Promise<string[]> {
   const conflicting: string[] = [];
-  
+
   try {
     const output = await git(['branch', '-a', '--format', '%(refname:short)']);
     const branches = output.trim().split('\n').filter(Boolean);
-    
+
     for (const branch of branches) {
       if (branch.includes('->')) continue;
-      
+
       try {
         const current = await git(['rev-parse', '--abbrev-ref', 'HEAD']);
         if (current.trim() === branch) continue;
-        
+
         // Try to rebase onto itself to check for conflicts
         await git(['merge-tree', `origin/${branch}`, branch, branch]);
       } catch {
@@ -331,7 +334,7 @@ async function detectConflictBranches(): Promise<string[]> {
   } catch {
     // Ignore
   }
-  
+
   return conflicting;
 }
 
@@ -342,20 +345,20 @@ async function detectStaleBranches(days: number = 30): Promise<string[]> {
   const stale: string[] = [];
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
-  
+
   try {
     const branches = (await git(['branch', '--format', '%(refname:short)']))
       .trim()
       .split('\n')
       .filter(Boolean);
-    
+
     for (const branch of branches) {
       if (!branch || branch === 'main' || branch === 'master') continue;
-      
+
       try {
         const dateOutput = await git(['log', '-1', '--format=%ci', branch]);
         const commitDate = new Date(dateOutput.trim());
-        
+
         if (commitDate < cutoff) {
           stale.push(branch);
         }
@@ -366,7 +369,7 @@ async function detectStaleBranches(days: number = 30): Promise<string[]> {
   } catch {
     // Ignore
   }
-  
+
   return stale;
 }
 
@@ -400,12 +403,13 @@ export async function reportBlockers(options: ListPROptions = {}): Promise<Block
 
 /**
  * Show branches needing attention
+ * @param baseBranch Branch to compare against (default: develop)
  */
-export async function showBranchesNeedingAttention(): Promise<BranchAttention[]> {
+export async function showBranchesNeedingAttention(baseBranch: string = 'develop'): Promise<BranchAttention[]> {
   const attention: BranchAttention[] = [];
   
-  const branches = await getBranchStatus();
-  
+  const branches = await getBranchStatus(baseBranch);
+
   for (const branch of branches) {
     if (branch.behind > 0) {
       attention.push({
@@ -422,7 +426,7 @@ export async function showBranchesNeedingAttention(): Promise<BranchAttention[]>
       });
     }
   }
-  
+
   return attention;
 }
 
@@ -431,7 +435,7 @@ export async function showBranchesNeedingAttention(): Promise<BranchAttention[]>
  */
 export async function generateDailyReport(options: ListPROptions = {}): Promise<DailyReport> {
   const config = await loadConfig() || {} as WorkflowConfig;
-  
+
   const report: DailyReport = {
     repo: '',
     type: config.repoType || 'internal',
@@ -452,7 +456,8 @@ export async function generateDailyReport(options: ListPROptions = {}): Promise<
   }
 
   // Get branch status
-  report.branchStatus = await getBranchStatus();
+  const baseBranch = options.baseBranch || 'develop';
+  report.branchStatus = await getBranchStatus(baseBranch);
 
   // Get PR status
   try {
@@ -465,7 +470,7 @@ export async function generateDailyReport(options: ListPROptions = {}): Promise<
   report.blockers = await reportBlockers(options);
 
   // Get branches needing attention
-  report.attention = await showBranchesNeedingAttention();
+  report.attention = await showBranchesNeedingAttention(baseBranch);
 
   return report;
 }
