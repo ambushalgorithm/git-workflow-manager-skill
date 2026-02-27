@@ -11,6 +11,11 @@ This repository is actively being worked on and is not meant for use until featu
 
 Manage complex Git branching workflows for AI agents. Handles branch lifecycle, upstream syncing, PR tracking, and automated maintenance.
 
+<p align="center">
+  <img alt="image" src="https://github.com/user-attachments/assets/b7150c69-9471-46c0-865c-5c29cae39587" width="800"/>
+  <img alt="image" src="https://github.com/user-attachments/assets/cfab9979-bd67-4990-abd8-648931f0ff87" width="800"/>
+</p>
+
 ## Branch Hierarchy
 
 ### Open Source (Fork)
@@ -127,6 +132,7 @@ For complete command reference, usage examples, and technical details, see:
 git clone https://github.com/ambushalgorithm/git-workflow-manager-skill.git ~/path/to/skills/git-workflow-manager
 
 # For standalone CLI
+cd ~/path/to/skills/git-workflow-manager
 npm install -g git-workflow-manager
 ```
 
