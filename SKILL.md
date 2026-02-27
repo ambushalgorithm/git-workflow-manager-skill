@@ -196,9 +196,29 @@ git-workflow prs -a username -b main -L 10
 # Run daily check + report
 git-workflow daily
 
+# Filter by author
+git-workflow daily -a username
+
+# Filter by base branch
+git-workflow daily -b main
+
+# Show merged PRs only
+git-workflow daily -s merged
+
 # Check upstream PR status only
 git-workflow upstream
 ```
+
+### Daily Options
+
+| Option | Description |
+|--------|-------------|
+| `-a, --author <user>` | Filter PRs by author |
+| `-A, --assignee <user>` | Filter PRs by assignee |
+| `-b, --base <branch>` | Filter PRs by base branch |
+| `-l, --label <label>` | Filter PRs by label |
+| `-s, --state <state>` | Filter PRs by state: open, closed, merged, all |
+| `-L, --limit <num>` | Limit number of PRs (default: 30) |
 
 ## Commit Tracking
 
