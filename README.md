@@ -112,6 +112,8 @@ For complete command reference, usage examples, and technical details, see:
 
 **[SKILL.md](SKILL.md)** — The authoritative reference for this skill.
 
+**[docs/Complete-PR-Workflow.md](docs/Complete-PR-Workflow.md)** — Step-by-step guide from feature creation to PR merge.
+
 ## Requirements
 
 - Node.js 18+

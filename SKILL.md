@@ -301,6 +301,12 @@ Config stored in `.git/workflow.json`:
 }
 ```
 
+## Full Workflow Guide
+
+For a complete step-by-step guide from feature creation to PR merge, see:
+
+**[docs/Complete-PR-Workflow.md](docs/Complete-PR-Workflow.md)**
+
 ## Dependencies
 
 - `git` - Core functionality
