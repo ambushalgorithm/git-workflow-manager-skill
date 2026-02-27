@@ -113,6 +113,9 @@ git-workflow pr-branch create my-feature
 ## Phase 5: Create the PR
 
 ```bash
+# Preview PR template (fill in manually or with AI)
+git-workflow pr create my-feature --dry-run
+
 # Create PR with auto-generated description from commits
 git-workflow pr create my-feature
 
@@ -120,15 +123,58 @@ git-workflow pr create my-feature
 git-workflow pr create my-feature -t "Feature Title" -b "Custom description"
 ```
 
-### Auto-Generated Description
+### PR Template (--dry-run)
 
-When you omit the `--body` flag, the tool auto-generates a PR description:
+When using `--dry-run`, you'll get an empty template to fill in:
 
 ```markdown
 ### AI/Vibe-Coded Disclosure 🤖
-- [x] **AI-assisted:** Built with [Model] + OpenClaw v[version]
-- [x] **Testing level:** [e.g., Fully tested]
-- [x] **Code understanding:** Yes — reviewed for compliance
+- [x] **AI-assisted:** Built with [Model] + [AI-agent e.g., OpenClaw] [version]
+- [x] **Testing level:** [e.g., Fully tested (N tests)]
+- [x] **Code understanding:** Yes — reviewed for compliance with [Project] standards
+
+# Summary
+[2-3 sentence overview of what this PR does]
+
+## What
+- [Bullet point 1]
+- [Bullet point 2]
+- [Bullet point 3]
+
+## Why
+[Why this change matters - what problem does it solve? What does it enable?]
+
+## Technical Changes
+| File | Change |
+|------|--------|
+| file1.py | [Change description] |
+| file2.ts | [Change description] |
+
+## Testing
+- ✅ [Test 1]
+- ✅ [Test 2]
+
+## Breaking Changes
+[None or describe any breaking changes]
+
+## Related
+[Any related PRs, issues, or context]
+```
+
+After filling in the template, create the PR:
+```bash
+git-workflow pr create my-feature -t "my-feature" -b "<paste filled template>"
+```
+
+### Auto-Generated Description
+
+When you provide a body (without `--dry-run`), the tool auto-generates a PR description from your commits:
+
+```markdown
+### AI/Vibe-Coded Disclosure 🤖
+- [x] **AI-assisted:** Built with [Model] + [AI-agent e.g., OpenClaw] [version]
+- [x] **Testing level:** [e.g., Fully tested (N tests)]
+- [x] **Code understanding:** Yes — reviewed for compliance with [Project] standards
 
 # Summary
 [Overview of changes]
@@ -273,6 +319,7 @@ feat/my-feature ←────────────┘│ (git-workflow reba
 | **PR Branch** | `git-workflow pr-branch update <name>` | Update PR branch |
 | **PR Branch** | `git-workflow pr-branch list` | List PR branches |
 | **PR** | `git-workflow pr create <branch>` | Create PR |
+| **PR** | `git-workflow pr create <branch> --dry-run` | Preview PR template |
 | **PR** | `git-workflow pr sync [branch]` | Sync after feedback |
 | **Status** | `git-workflow status` | Show current status |
 | **Daily** | `git-workflow daily` | Run daily check |
