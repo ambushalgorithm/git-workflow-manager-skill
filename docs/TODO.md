@@ -620,20 +620,20 @@ git-workflow pr-branch update <name>
 ### Implementation Plan
 
 #### Phase 1: PR Branch Commands
-- [ ] Add `pr-branch` subcommand
-- [ ] `pr-branch create <name>` - Create PR branch with pr-ready commits
-- [ ] `pr-branch update <name>` - Update PR branch with new pr-ready commits
-- [ ] `pr-branch list` - List existing PR branches
+- [x] Add `pr-branch` subcommand
+- [x] `pr-branch create <name>` - Create PR branch with pr-ready commits
+- [x] `pr-branch update <name>` - Update PR branch with new pr-ready commits
+- [x] `pr-branch list` - List existing PR branches
 
 #### Phase 2: PR Creation Commands
-- [ ] Add `pr` subcommand  
-- [ ] `pr create --title <title> --body <body>` - Create PR
-- [ ] Auto-detect upstream vs origin for PR target
+- [x] Add `pr` subcommand  
+- [x] `pr create --title <title> --body <body>` - Create PR
+- [x] Auto-detect upstream vs origin for PR target
 - [ ] Support PR templates
 
 #### Phase 3: PR Sync Commands
-- [ ] `pr sync` - Sync working branch after PR feedback
-- [ ] Auto-rebase onto develop after parent updates
+- [x] `pr sync` - Sync working branch after PR feedback
+- [x] Auto-rebase onto develop after parent updates
 
 ### Technical Details
 

@@ -79,6 +79,14 @@ origin/feat/*
 | `git-workflow commits` | List all tracked commits |
 | `git-workflow diff` | Show diff between staging and integration |
 
+| PR Operations | |
+|---------|-------------|
+| `git-workflow pr-branch create <name>` | Create PR branch from pr-ready commits |
+| `git-workflow pr-branch update <name>` | Update PR branch with new pr-ready commits |
+| `git-workflow pr-branch list` | List active PR branches |
+| `git-workflow pr create <branch>` | Create a PR |
+| `git-workflow pr sync [branch]` | Sync working branch after PR feedback |
+
 | Daily & Reporting | |
 |---------|-------------|
 | `git-workflow status` | Show current workflow status |
@@ -189,6 +197,26 @@ git-workflow prs -s merged
 # Combined filters
 git-workflow prs -a username -b main -L 10
 ```
+
+### PR Branch Workflow
+
+```bash
+# After making commits and tagging them as pr-ready:
+git-workflow tag abc123 pr-ready
+
+# Create PR branch from pr-ready commits
+git-workflow pr-branch create my-feature
+
+# Create the PR
+git-workflow pr create my-feature -t "Feature Title" -b "Description"
+
+# After PR feedback, sync and update
+git-workflow pr sync develop
+# Make changes, tag new commits
+git-workflow tag def456 pr-ready
+git-workflow pr-branch update my-feature
+```
+
 ### Daily Automation
 ```bash
 

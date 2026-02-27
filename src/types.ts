@@ -30,6 +30,7 @@ export interface WorkflowConfig {
     hotfix: string
     release: string
   }
+  hierarchy?: BranchHierarchy
   tracking?: TrackingConfig
   mergeStrategy?: MergeStrategyConfig
 }

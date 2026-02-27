@@ -9,6 +9,7 @@ import { rebaseOnto } from './lib/rebase'
 import { tagCommit, listPRReadyCommits, listInternalOnlyCommits, listAllTrackedCommits, showStagingIntegrationDiff, removeCommitFromTracking, getCommitInfo } from './lib/commits'
 import { runDailyCheck, generateDailyReport, formatDailyReport, listOpenPRs, checkUpstreamStatus, reportBlockers, showBranchesNeedingAttention, detectNewUpstreamCommits, type ListPROptions } from './lib/daily'
 import { getMergeStrategy, setMergeStrategy, rebaseBranch, mergeBranchInto, hasConflicts, abortOperation, getBranchUpdateType, smartUpdate, fastForward, updateChildBranches } from './lib/updates'
+import { createPRBranch, updatePRBranch, listPRBranches, createPR, syncFromPR } from './lib/pr-branch'
 
 const program = new Command()
 
@@ -541,6 +542,94 @@ program
   .action(async (baseBranch) => {
     try {
       await updateChildBranches(baseBranch)
+    } catch (error: any) {
+      console.error('Error:', error.message)
+      process.exit(1)
+    }
+  })
+
+// PR Branch commands
+const prBranch = program
+  .command('pr-branch')
+  .description('Manage PR branches')
+
+prBranch
+  .command('create')
+  .description('Create PR branch from pr-ready commits')
+  .argument('<name>', 'Name for the PR branch')
+  .option('-f, --from <branch>', 'Source branch (default: feature branch)', '')
+  .action(async (name, options) => {
+    try {
+      await createPRBranch(name, options.from || undefined)
+    } catch (error: any) {
+      console.error('Error:', error.message)
+      process.exit(1)
+    }
+  })
+
+prBranch
+  .command('update')
+  .description('Update PR branch with new pr-ready commits')
+  .argument('<name>', 'Name of the PR branch')
+  .action(async (name) => {
+    try {
+      await updatePRBranch(name)
+    } catch (error: any) {
+      console.error('Error:', error.message)
+      process.exit(1)
+    }
+  })
+
+prBranch
+  .command('list')
+  .description('List active PR branches')
+  .action(async () => {
+    try {
+      const branches = await listPRBranches()
+      if (branches.length === 0) {
+        console.log('No PR branches found.')
+      } else {
+        console.log('PR branches:')
+        for (const branch of branches) {
+          console.log(`  - ${branch}`)
+        }
+      }
+    } catch (error: any) {
+      console.error('Error:', error.message)
+      process.exit(1)
+    }
+  })
+
+// PR commands
+const pr = program
+  .command('pr')
+  .description('Create and manage PRs')
+
+pr
+  .command('create')
+  .description('Create a PR')
+  .argument('<branch>', 'PR branch name (without -pr suffix)')
+  .option('-t, --title <title>', 'PR title')
+  .option('-b, --body <body>', 'PR body/description')
+  .option('-d, --draft', 'Create as draft PR')
+  .action(async (branch, options) => {
+    try {
+      const title = options.title || `PR: ${branch}`;
+      const body = options.body || `Created via git-workflow`;
+      await createPR(title, body, `${branch}-pr`)
+    } catch (error: any) {
+      console.error('Error:', error.message)
+      process.exit(1)
+    }
+  })
+
+pr
+  .command('sync')
+  .description('Sync working branch after PR feedback')
+  .argument('[branch]', 'Parent branch to sync from (default: develop)')
+  .action(async (branch) => {
+    try {
+      await syncFromPR(branch || 'develop')
     } catch (error: any) {
       console.error('Error:', error.message)
       process.exit(1)
