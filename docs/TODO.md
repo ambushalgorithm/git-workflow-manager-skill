@@ -653,13 +653,16 @@ git-workflow pr-branch update <name>
 - Detached HEAD → Error: "Must be on a working branch"
 - No pr-ready commits on current branch → Show message: "No pr-ready commits found on this branch"
 
-**Files to modify:**
-- `src/lib/pr-branch.ts` - Update `getPRReadyCommits()` or create new `getPRReadyCommitsOnBranch()`
+**Files modified:**
+- `src/lib/pr-branch.ts` - Added `getPRReadyCommitsOnBranch()` function
+- `src/lib/pr-branch.ts` - Updated `createPRBranch()` and `updatePRBranch()` to use filtered commits
 
 **Testing:**
-- Unit test: filter works correctly
-- Unit test: detached HEAD error
-- Unit test: empty branch message
+- [x] Unit test: filter works correctly
+- [x] Unit test: detached HEAD error
+- [x] Unit test: PR branch error  
+- [x] Unit test: empty branch message
+- [ ] Docker tests on QA1
 
 ### Technical Details
 

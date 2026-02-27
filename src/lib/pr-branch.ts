@@ -18,6 +18,42 @@ export async function getPRReadyCommits(): Promise<string[]> {
 }
 
 /**
+ * Get list of pr-ready commits that exist on the current working branch
+ * Uses Option B: Query branch log directly for efficiency and safety
+ */
+export async function getPRReadyCommitsOnBranch(): Promise<string[]> {
+  // 1. Get current branch name
+  const currentBranch = await getCurrentBranch();
+  
+  if (!currentBranch) {
+    throw new Error('Detached HEAD. Must be on a working branch to create PR branch.');
+  }
+  
+  // 2. Don't allow PR branches as source
+  if (currentBranch.endsWith('-pr')) {
+    throw new Error(`Cannot run from PR branch "${currentBranch}". Checkout your feature branch first.`);
+  }
+  
+  // 3. Get all pr-ready commits from config
+  const allPRReady = await getPRReadyCommits();
+  
+  if (allPRReady.length === 0) {
+    return [];
+  }
+  
+  // 4. Get commit hashes on current branch
+  const branchLog = await git(['log', '--format=%h', currentBranch]);
+  const branchHashes = branchLog.trim().split('\n').filter(Boolean);
+  
+  // 5. Filter: only include pr-ready commits that exist in branch history
+  const branchCommits = allPRReady.filter(hash =>
+    branchHashes.some(h => h.startsWith(hash.slice(0, 7)))
+  );
+  
+  return branchCommits;
+}
+
+/**
  * Detect if repo is fork (has upstream remote)
  */
 export async function isFork(): Promise<boolean> {
@@ -63,10 +99,17 @@ export async function getPRTarget(): Promise<{ owner: string; repo: string; base
  */
 export async function createPRBranch(name: string, fromBranch?: string): Promise<void> {
   const config = await loadConfig() as WorkflowConfig;
-  const prReadyCommits = await getPRReadyCommits();
+  
+  // Get pr-ready commits that exist on current branch
+  const prReadyCommits = await getPRReadyCommitsOnBranch();
   
   if (prReadyCommits.length === 0) {
-    throw new Error('No pr-ready commits found. Tag commits with "git-workflow tag <hash> pr-ready"');
+    const allPRReady = await getPRReadyCommits();
+    if (allPRReady.length === 0) {
+      throw new Error('No pr-ready commits found. Tag commits with "git-workflow tag <hash> pr-ready"');
+    } else {
+      throw new Error('No pr-ready commits found on this branch. Make sure you\'re on the correct feature branch.');
+    }
   }
   
   // Determine parent branch
@@ -112,7 +155,9 @@ export async function createPRBranch(name: string, fromBranch?: string): Promise
  */
 export async function updatePRBranch(name: string): Promise<void> {
   const config = await loadConfig() as WorkflowConfig;
-  const prReadyCommits = await getPRReadyCommits();
+  
+  // Get pr-ready commits on current branch
+  const prReadyCommits = await getPRReadyCommitsOnBranch();
   
   const prBranchName = `${name}-pr`;
   
