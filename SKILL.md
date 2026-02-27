@@ -162,7 +162,18 @@ git-workflow internal
 
 # List all tracked commits
 git-workflow commits
+```
+### PR Options
 
+| Option | Description |
+|--------|-------------|
+| `-a, --author <user>` | Filter by author |
+| `-A, --assignee <user>` | Filter by assignee |
+| `-b, --base <branch>` | Filter by base branch |
+| `-l, --label <label>` | Filter by label |
+| `-s, --state <state>` | Filter by state: open, closed, merged, all |
+| `-L, --limit <num>` | Limit number of results (default: 30) |
+```bash
 # List open pull requests
 git-workflow prs
 
@@ -177,19 +188,9 @@ git-workflow prs -s merged
 
 # Combined filters
 git-workflow prs -a username -b main -L 10
-
-### PR Options
-
-| Option | Description |
-|--------|-------------|
-| `-a, --author <user>` | Filter by author |
-| `-A, --assignee <user>` | Filter by assignee |
-| `-b, --base <branch>` | Filter by base branch |
-| `-l, --label <label>` | Filter by label |
-| `-s, --state <state>` | Filter by state: open, closed, merged, all |
-| `-L, --limit <num>` | Limit number of results (default: 30) |
-
+```
 ### Daily Automation
+```bash
 
 ```bash
 # Run daily check + report
