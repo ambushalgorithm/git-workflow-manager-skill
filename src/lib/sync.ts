@@ -19,7 +19,7 @@ export async function syncStaging(config: WorkflowConfig, force = false): Promis
   // Pull latest staging first (in case it was updated via GitHub)
   console.log('Pulling latest staging...');
   try {
-    await git(['pull', 'origin', 'staging']);
+    await git(['pull', '--rebase', 'origin', 'staging']);
   } catch {
     // May fail if no tracking, continue anyway
   }
@@ -54,7 +54,7 @@ export async function syncDevelop(config: WorkflowConfig, force = false): Promis
   // Pull latest staging first (in case it was updated via GitHub)
   console.log('Pulling latest staging...');
   try {
-    await git(['pull', 'origin', 'staging']);
+    await git(['pull', '--rebase', 'origin', 'staging']);
   } catch {
     // May fail if no tracking, continue anyway
   }
