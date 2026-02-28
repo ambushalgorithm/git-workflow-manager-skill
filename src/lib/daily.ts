@@ -422,8 +422,8 @@ export async function showBranchesNeedingAttention(baseBranch: string = 'develop
     if (branch.behind > 0) {
       attention.push({
         branch: branch.branch,
-        reason: `${branch.behind} commits behind`,
-        action: `git-workflow rebase ${branch.branch}`,
+        reason: `${branch.behind} commits behind ${baseBranch}`,
+        action: `git-workflow rebase ${baseBranch}`,
       });
     }
     if (branch.ahead > 0) {
