@@ -35,11 +35,13 @@ program
 // Uninit command
 program
   .command('uninit')
-  .description('Remove workflow (delete staging/develop branches and config)')
+  .description('Remove workflow (delete branches and config)')
   .option('-y, --yes', 'Skip confirmation prompt')
+  .option('-b, --branches <branches...>', 'Branches to delete (default: staging develop integration)')
   .action(async (options) => {
     // Show warning
-    console.log('⚠️  This will delete the staging and develop branches and remove workflow config.')
+    const branches = options.branches || ['staging', 'develop', 'integration']
+    console.log(`⚠️  This will delete branches: ${branches.join(', ')} and remove workflow config.`)
     
     if (!options.yes) {
       const readline = await import('readline')
@@ -53,7 +55,7 @@ program
     }
     
     try {
-      await uninitWorkflow()
+      await uninitWorkflow(branches)
     } catch (error: any) {
       console.error('Error:', error.message)
       process.exit(1)

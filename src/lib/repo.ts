@@ -145,7 +145,7 @@ export async function createBranchHierarchy(repoType: RepoType, mainBranch: stri
 /**
  * Remove workflow (delete workflow branches and config)
  */
-export async function uninitWorkflow(): Promise<void> {
+export async function uninitWorkflow(branches?: string[]): Promise<void> {
   const config = await loadConfig()
   
   if (!config) {
@@ -153,14 +153,17 @@ export async function uninitWorkflow(): Promise<void> {
     return
   }
 
-  // Get hierarchy branches to delete
-  const branchesToDelete = ['staging', 'develop']
+  // Default branches to delete (staging, develop, and integration for backward compat)
+  const branchesToDelete = branches || ['staging', 'develop', 'integration']
   
   // Get current branch
   const currentBranch = await git.getCurrentBranch()
   
   // Delete local and remote branches
   for (const branch of branchesToDelete) {
+    // Skip empty strings
+    if (!branch) continue
+    
     // Delete remote branch if exists
     try {
       await git.git(['push', 'origin', '--delete', branch])
