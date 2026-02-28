@@ -9,15 +9,13 @@
 ## New Branch Hierarchy
 
 ```
-upstream/master (original repo)
-        ↑ (PRs merged here)
-origin/master            ← synced with upstream
-        ↑
-origin/staging           ← ALL changes (PR'd + internal), created from master
-        ↑
-origin/develop           ← rebased from staging
-        ↑
-origin/feat/*
+master (production)
+  ↑
+staging (main working branch - ALL changes)
+  ↑
+develop (rebased working base)
+  ↑
+feat/*
 ```
 
 ---
@@ -28,70 +26,112 @@ origin/feat/*
 # Initialize workflow on a repo
 git-workflow init
 
-# Create a feature branch
+# Create a feature branch (from develop)
 git-workflow create feat my-new-feature
 
-# Sync branches
-git-workflow sync master           # Fetch & pull from upstream (fork only)
+# Sync local master from upstream (fork only)
+git-workflow sync master
 
-# Rebase (new syntax)
-git-workflow rebase develop staging    # Rebase develop onto staging (get ALL changes)
-git-workflow rebase develop master    # Rebase develop onto master (fork only)
+# Rebase (new syntax: git-workflow rebase <branch> <target>)
+git-workflow rebase develop staging    # Get ALL changes in develop
+git-workflow rebase develop master     # Get upstream changes in develop (fork only)
 
 # PR management
-git-workflow pr-branch create <name>
-git-workflow pr-branch update <name>
-git-workflow pr-branch list
-git-workflow pr create <branch>
+git-workflow pr-branch create <name>  # Create PR branch from pr-ready commits
+git-workflow pr-branch update <name>  # Update PR branch with new pr-ready commits
+git-workflow pr-branch list           # List active PR branches
+git-workflow pr create <name>         # Create PR (auto-targets staging)
+
+# Tagging
+git-workflow tag <commit> pr-ready    # Mark commit for PR
+git-workflow tag <commit> internal-only # Mark commit as internal
+
+# View commits
+git-workflow pr-ready                 # List pr-ready commits
+git-workflow internal                 # List internal-only commits
+git-workflow commits                  # List all tracked commits
 
 # Daily/automation
-git-workflow daily
-git-workflow status
+git-workflow daily                   # Run daily check + report
+git-workflow status                  # Show current status
 ```
 
 ---
 
-## Implementation Tasks
+## Implementation Phases
 
 ### Phase 1: Update sync command
 
+**Add `sync master` and remove old sync commands**
+
 - [ ] Add `git-workflow sync master` - fetches from upstream, pulls to local master
-- [ ] Remove `sync staging` (deprecated)
-- [ ] Remove `sync develop` (deprecated)
+  - Implementation: `git fetch upstream && git pull upstream/master`
+  - For forks only (error if no upstream remote)
+- [ ] Remove `sync staging` (deprecated - use rebase instead)
+- [ ] Remove `sync develop` (deprecated - use rebase instead)
 - [ ] Update CLI to remove old sync commands
+- [ ] Update docs
 
-### Phase 2: Update rebase Command
+**Files to modify:**
+- `src/commands/sync.ts` - Add sync master, remove old sync commands
+- `src/index.ts` - Update CLI
 
-- [ ] Allow specifying any target branch: `git-workflow rebase develop master`
-- [ ] Current: rebase onto develop by default
-- [ ] New: rebase onto any specified branch
-- [ ] Update CLI to accept parent branch argument
+### Phase 2: Update rebase command
 
-### Phase 3: Update init Command
+**Change syntax from `git-workflow rebase [parent]` to `git-workflow rebase <branch> <target>`**
+
+- [ ] Update rebase to accept two arguments: branch and target
+- [ ] Example: `git-workflow rebase develop staging` rebases develop onto staging
+- [ ] Default behavior: if only one arg, assume it's target and use current branch
+- [ ] Update CLI help text
+
+**Files to modify:**
+- `src/commands/rebase.ts` - Update argument parsing
+- `src/index.ts` - Update CLI
+
+### Phase 3: Update init command
+
+**Create simplified branch hierarchy: master, staging, develop**
 
 - [ ] `git-workflow init` creates: `master`, `staging`, `develop` (no integration)
-- [ ] For forks: setup upstream remote
-- [ ] For internal: just local branches
+- [ ] For forks: setup upstream remote, create branches from master
+- [ ] For internal: just local branches from master
+- [ ] Update docs with setup instructions
 
-### Phase 3: Remove integration
+**Files to modify:**
+- `src/commands/init.ts` - Simplify branch creation
+- `src/index.ts` - Update CLI
 
-- [ ] Remove `integration` from branch hierarchy config
+### Phase 4: Update PR target
+
+**All PRs target staging**
+
+- [ ] Update `getPRTarget()` in pr-branch.ts to always target `staging`
+- [ ] Remove integration references
+- [ ] Update PR creation to use staging as default
+
+**Files to modify:**
+- `src/lib/pr-branch.ts` - Update getPRTarget()
+
+### Phase 5: Remove integration
+
+**Remove integration from code and config**
+
 - [ ] Remove `integration` from types.ts
-- [ ] Update docs to remove integration references
+- [ ] Remove `integration` from config/hierarchy
+- [ ] Remove from all related code
 
-### Phase 4: Update Documentation
+**Files to modify:**
+- `src/types.ts` - Remove integration
+- `src/lib/*.ts` - Remove integration references
+
+### Phase 6: Update Documentation
+
+**Update all docs with new workflow**
 
 - [ ] Update README.md with new hierarchy
 - [ ] Update Complete-PR-Workflow.md
-- [ ] Update any other docs
-
----
-
-## Testing
-
-- [ ] Run unit tests (in Docker on QA1)
-- [ ] Run E2E tests (in Docker on QA1)
-- [ ] Target: ≥95% code coverage
+- [ ] Update SKILL.md if needed
 
 ---
 
@@ -167,6 +207,14 @@ docker run --rm git-workflow-test npm test -- --testPathPattern="sync.test.ts"
 docker run --rm git-workflow-test npm test -- --coverage
 ```
 
+### Test Checklist
+
+- [ ] Run unit tests (must pass ≥95% coverage)
+- [ ] Run E2E tests
+- [ ] Test sync master command
+- [ ] Test rebase with new syntax
+- [ ] Test PR creation targets staging
+
 ---
 
 ## PR Workflow
@@ -218,3 +266,4 @@ The only difference is the sync step:
 ---
 
 *Created: 2026-02-27*
+*Last Updated: 2026-02-27*
