@@ -324,20 +324,38 @@ git push origin --delete my-feature-pr
 
 ---
 
-## Visual Flow
+## Branch Hierarchy
 
+### Open Source (Fork)
 ```
-main ←─────────────────────────┐
-  ↑                           │
-staging ←─────────────────────┤ (git-workflow sync staging)
-  ↑                           │
-develop ←────────────────────┐│ (git-workflow sync develop)
-  ↑                          ││
-feat/my-feature ←────────────┘│ (git-workflow rebase develop)
-         │
-         ├── pr-ready commits ──→ my-feature-pr ──→ PR → upstream/main
-         │
-         └── internal-only ──→ stays local
+upstream/master
+        ↑
+origin/master            ← synced with upstream
+        ↑
+origin/staging           ← ALL changes (PR'd + non-PR'd)
+        ↑
+origin/integration       ← PR-ready subset
+        ↑
+origin/develop           ← rebased working base
+        ↑
+origin/release/x.x.x
+origin/hotfix/*
+origin/feat/*
+```
+
+### Closed Source (Internal)
+```
+     master
+        ↑
+     staging        ← ALL changes
+        ↑
+     integration    ← PR-ready
+        ↑
+     develop        ← rebased working base
+        ↑
+     release/x.x.x
+     hotfix/*
+     feat/*
 ```
 
 ---
