@@ -10,11 +10,10 @@ The git-workflow-manager provides a structured approach to managing feature bran
 
 1. **Start** → Create feature from synced develop
 2. **Work** → Make commits, keep synced
-3. **Prepare** → Tag commits as `pr-ready` or `internal-only`
-4. **Create PR Branch** → Cherry-pick pr-ready commits
-5. **Create PR** → Open PR to upstream or origin
-6. **Handle Feedback** → Sync, update, push changes
-7. **Merge** → Merge and cleanup
+3. **Prepare** → Create PR branch when ready
+4. **Create PR** → Open PR to staging (always)
+5. **Handle Feedback** → Sync, update, push changes
+6. **Merge** → Merge and cleanup
 
 ---
 
@@ -23,9 +22,11 @@ The git-workflow-manager provides a structured approach to managing feature bran
 Always start from a clean, synced state:
 
 ```bash
-# Sync in order: staging → main, then develop → staging
-git-workflow sync staging
-git-workflow sync develop
+# For forks: sync master from upstream first
+git-workflow sync master
+
+# Rebase develop onto staging
+git-workflow rebase develop staging
 
 # Create feature branch from develop
 git-workflow create feat/my-feature
@@ -51,66 +52,30 @@ git commit -m "feat: add login form"
 ### Keep Synced Periodically
 
 ```bash
-# Fetch latest from all remotes
-git-workflow sync develop
-
 # Rebase your feature onto latest develop
-git-workflow rebase develop
+git-workflow rebase develop staging
 ```
 
 ---
 
 ## Phase 3: Prepare for PR
 
-When your feature is ready for review, tag your commits:
-
-### Tag Commits
-
-```bash
-# For commits that will go upstream (open source):
-git-workflow tag <commit-hash> pr-ready
-
-# For commits that stay internal (not shared):
-git-workflow tag <commit-hash> internal-only
-```
-
-### View Tagged Commits
-
-```bash
-# View commits marked for upstream
-git-workflow pr-ready
-
-# View commits marked as internal-only
-git-workflow internal
-
-# View all tracked commits
-git-workflow commits
-```
-
----
-
-## Phase 4: Create PR Branch
-
-Create a dedicated PR branch with only your `pr-ready` commits:
+When your feature is ready for review, create a PR branch:
 
 ```bash
 git-workflow pr-branch create my-feature
 ```
 
 **What this does:**
-1. Reads all commits tagged as `pr-ready` from config
-2. Creates new branch `my-feature-pr` from `integration`
-3. Cherry-picks each pr-ready commit
-4. Pushes to remote
-
-**If cherry-pick conflicts occur:**
-- Resolve conflicts manually
-- Run `git-workflow rebase --continue`
-- The command will fail gracefully and clean up
+1. Creates new branch `my-feature-pr` from `staging`
+2. Cherry-picks commits from your feature branch
+3. Pushes to remote
 
 ---
 
-## Phase 5: Create the PR
+## Phase 4: Create the PR
+
+All PRs target `staging`:
 
 ```bash
 # Preview PR template (fill in manually or with AI)
@@ -188,74 +153,49 @@ When you provide a body (without `--dry-run`), the tool auto-generates a PR desc
 | Multiple | N commit(s) in PR branch |
 
 ## Testing
-- ✅ PR branch created from pr-ready commits
+- ✅ PR branch created
 
 ## Breaking Changes
 [None]
 
 ## Related
 - Branch: [branch-name]
-- Base: [base-branch]
+- Base: staging
 ```
 
-### Fork Detection
+### PR Target
 
-The tool auto-detects your repo type:
+All PRs target `staging` — both for forks and internal repos:
 
 | Repo Type | Detection | PR Target |
 |-----------|-----------|-----------|
-| **Fork** | Has `upstream` remote | `upstream/main` |
-| **Internal** | No `upstream` remote | `origin/staging` |
-
-### Manual Alternative
-
-```bash
-# For forks
-gh pr create --base main --head my-feature-pr \
-  --title "Feature Title" --body "Description" \
-  --repo upstream-org/upstream-repo
-
-# For internal
-gh pr create --base staging --head my-feature-pr \
-  --title "Feature Title" --body "Description"
-```
+| **Fork** | Has `upstream` remote | `staging` |
+| **Internal** | No `upstream` remote | `staging` |
 
 ---
 
-## Phase 6: Handle PR Feedback
+## Phase 5: Handle PR Feedback
 
 When reviewers request changes:
 
 ```bash
-# 1. Sync your working branch from develop
-git-workflow pr sync develop
+# 1. Rebase your working branch onto latest develop
+git-workflow rebase develop staging
 
 # 2. Make your changes
 git commit --amend -m "feat: fix login validation"
 # or
 git commit -m "feat: address review feedback"
 
-# 3. Re-tag the commit if needed
-git-workflow tag <new-commit-hash> pr-ready
-
-# 4. Update PR branch with new commits
+# 3. Update PR branch with new commits
 git-workflow pr-branch update my-feature
 
-# 5. Push is automatic (force push)
+# 4. Push is automatic (force push)
 ```
-
-### PR Sync Details
-
-`git-workflow pr sync`:
-1. Fetches latest from all remotes
-2. Checks out target branch (develop by default)
-3. Pulls latest changes
-4. Checks out your feature branch
-5. Rebases onto the target branch
 
 ---
 
-## Phase 7: Merge
+## Phase 6: Merge
 
 Once approved:
 
@@ -266,54 +206,27 @@ gh pr merge my-feature-pr --squash --delete-branch
 # Or via web UI (recommended for protected branches)
 ```
 
-### Merge to Staging (Internal Projects)
+### Merge to Master
 
-For internal projects where you want to test features locally before they reach `develop`, you can merge into `staging` first. This is useful when:
-- You need to test the feature in a staging environment
-- You want features merged in so you can use them locally
-- The feature will be merged into `staging`, then merged into `develop`
-
-**Option 1: Create a PR against staging** (recommended)
+After merging to staging, sync to propagate changes:
 
 ```bash
-# Create a staging-integration branch from staging
-git checkout staging
-git checkout -b staging-integration
-
-# Merge your PR branches
-git merge feat/add-docker-support-pr
-git merge feat/sanitize-prompt-injection-pr
-
-# Push and create PR to staging
-git push origin staging-integration
-gh pr create --base staging --head staging-integration \
-  --title "Integrate features" --body "Merge features into staging"
-```
-
-Once merged to staging, it will flow: `staging` → `develop` (via sync).
-
-**Option 2: Direct merge into staging** (quick)
-
-```bash
-git checkout staging
-git merge feat/add-docker-support-pr
-git merge feat/sanitize-prompt-injection-pr
-git push origin staging
+# Rebase develop onto staging, then master
+git-workflow rebase develop staging
+git-workflow rebase master staging
+git push origin master
 ```
 
 **Flow:**
 ```
-feat/* → feat/*-pr → PR → staging → (sync) → develop → main
+feat/* → feat/*-pr → PR → staging → develop → master
 ```
-
-**Warning:** Only merge to staging features that are ready to be used/tested internally. Staging should generally stay deployable.
 
 ### Cleanup After Merge
 
 ```bash
 # Sync to get the merge
-git-workflow sync staging
-git-workflow sync develop
+git fetch --all
 
 # Delete local feature branch
 git branch -d feat/my-feature
@@ -332,9 +245,7 @@ upstream/master
         ↑
 origin/master            ← synced with upstream
         ↑
-origin/staging           ← ALL changes (PR'd + non-PR'd)
-        ↑
-origin/integration       ← PR-ready subset
+origin/staging           ← ALL changes (PR'd to upstream)
         ↑
 origin/develop           ← rebased working base
         ↑
@@ -349,8 +260,6 @@ origin/feat/*
         ↑
      staging        ← ALL changes
         ↑
-     integration    ← PR-ready
-        ↑
      develop        ← rebased working base
         ↑
      release/x.x.x
@@ -364,20 +273,14 @@ origin/feat/*
 
 | Phase | Command | Description |
 |-------|---------|-------------|
-| **Sync** | `git-workflow sync staging` | Sync staging from main |
-| **Sync** | `git-workflow sync develop` | Sync develop from staging |
-| **Rebase** | `git-workflow rebase develop` | Rebase feature onto develop |
+| **Sync** | `git-workflow sync master` | Sync master from upstream (forks only) |
+| **Rebase** | `git-workflow rebase <branch> <target>` | Rebase branch onto target |
 | **Create** | `git-workflow create feat/name` | Create feature branch |
-| **Tag** | `git-workflow tag <hash> pr-ready` | Mark commit for upstream |
-| **Tag** | `git-workflow tag <hash> internal-only` | Mark commit as internal |
-| **View** | `git-workflow pr-ready` | List pr-ready commits |
-| **View** | `git-workflow internal` | List internal-only commits |
 | **PR Branch** | `git-workflow pr-branch create <name>` | Create PR branch |
 | **PR Branch** | `git-workflow pr-branch update <name>` | Update PR branch |
 | **PR Branch** | `git-workflow pr-branch list` | List PR branches |
 | **PR** | `git-workflow pr create <branch>` | Create PR |
 | **PR** | `git-workflow pr create <branch> --dry-run` | Preview PR template |
-| **PR** | `git-workflow pr sync [branch]` | Sync after feedback |
 | **Status** | `git-workflow status` | Show current status |
 | **Daily** | `git-workflow daily` | Run daily check |
 
@@ -405,7 +308,7 @@ git-workflow pr-branch create my-feature
 
 ### Rebase Conflicts
 
-If `pr sync` or `rebase develop` fails:
+If `rebase` fails:
 
 ```bash
 # Resolve conflicts
@@ -434,8 +337,6 @@ git checkout -b recovery-branch <commit-hash>
 
 ## Best Practices
 
-1. **Sync often** - Run `git-workflow sync develop` and `git-workflow rebase develop` regularly
-2. **Tag early** - Tag commits as `pr-ready` when ready, not at the end
-3. **Small PRs** - Few, focused commits are easier to review
-4. **Keep internal separate** - Use `internal-only` for internal-only changes
-5. **Clean branches** - Delete merged branches promptly
+1. **Sync often** - Run `git-workflow rebase develop staging` regularly
+2. **Small PRs** - Few, focused commits are easier to review
+3. **Clean branches** - Delete merged branches promptly

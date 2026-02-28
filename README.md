@@ -26,9 +26,7 @@ upstream/master
         ↑
 origin/master            ← synced with upstream
         ↑
-origin/staging           ← ALL changes (PR'd + non-PR'd)
-        ↑
-origin/integration       ← PR-ready subset
+origin/staging           ← ALL changes (PR'd to upstream)
         ↑
 origin/develop           ← rebased working base
         ↑
@@ -42,8 +40,6 @@ origin/feat/*
      master
         ↑
      staging        ← ALL changes
-        ↑
-     integration    ← PR-ready
         ↑
      develop        ← rebased working base
         ↑
@@ -70,17 +66,15 @@ git-workflow init
 # Create a feature branch
 git-workflow create feat my-new-feature
 ```
-### Run in order: 1 → 2 → 3 to keep everything in sync.
+
+### Sync & Rebase Commands
 
 ```bash
-# Rebases staging onto main
-git-workflow sync staging
+# Sync master from upstream (forks only)
+git-workflow sync master
 
-# Rebases develop onto staging
-git-workflow sync develop
-
-# Rebases current branch onto develop
-git-workflow rebase develop 
+# Rebase a branch onto another
+git-workflow rebase develop staging
 
 # Check status
 git-workflow status
@@ -103,7 +97,6 @@ Date: 2026-02-24
 BRANCH STATUS:
 ✓ master - synced
 ✓ staging - 2 commits ahead
-✓ integration - 1 commit ahead (1 PR open)
 ✓ develop - synced with staging
 
 NEEDS ATTENTION:
