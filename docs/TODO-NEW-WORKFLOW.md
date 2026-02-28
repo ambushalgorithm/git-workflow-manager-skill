@@ -32,13 +32,11 @@ git-workflow init
 git-workflow create feat my-new-feature
 
 # Sync branches
-git-workflow sync master           # NEW: Sync local master from upstream
-git-workflow sync staging          # Rebase staging onto master
-git-workflow sync develop          # Rebase develop onto staging
+git-workflow sync master           # Fetch & pull from upstream (fork only)
 
 # Rebase (new syntax)
-git-workflow rebase develop master     # Rebase develop onto master (upstream changes)
-git-workflow rebase develop staging    # Rebase develop onto staging (all changes)
+git-workflow rebase develop staging    # Rebase develop onto staging (get ALL changes)
+git-workflow rebase develop master    # Rebase develop onto master (fork only)
 
 # PR management
 git-workflow pr-branch create <name>
@@ -55,12 +53,12 @@ git-workflow status
 
 ## Implementation Tasks
 
-### Phase 1: New sync master Command
+### Phase 1: Update sync command
 
-- [ ] Create `git-workflow sync master` command
-- [ ] Implementation: `git fetch upstream && git pull upstream/master`
-- [ ] For forks only (error if no upstream remote)
-- [ ] Update docs
+- [ ] Add `git-workflow sync master` - fetches from upstream, pulls to local master
+- [ ] Remove `sync staging` (deprecated)
+- [ ] Remove `sync develop` (deprecated)
+- [ ] Update CLI to remove old sync commands
 
 ### Phase 2: Update rebase Command
 
