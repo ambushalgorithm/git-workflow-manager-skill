@@ -266,6 +266,48 @@ gh pr merge my-feature-pr --squash --delete-branch
 # Or via web UI (recommended for protected branches)
 ```
 
+### Merge to Staging (Internal Projects)
+
+For internal projects where you want to test features locally before they reach `develop`, you can merge into `staging` first. This is useful when:
+- You need to test the feature in a staging environment
+- You want features merged in so you can use them locally
+- The feature will be merged into `staging`, then merged into `develop`
+
+**Option 1: Create a PR against staging** (recommended)
+
+```bash
+# Create a staging-integration branch from staging
+git checkout staging
+git checkout -b staging-integration
+
+# Merge your PR branches
+git merge feat/add-docker-support-pr
+git merge feat/sanitize-prompt-injection-pr
+
+# Push and create PR to staging
+git push origin staging-integration
+gh pr create --base staging --head staging-integration \
+  --title "Integrate features" --body "Merge features into staging"
+```
+
+Once merged to staging, it will flow: `staging` → `develop` (via sync).
+
+**Option 2: Direct merge into staging** (quick)
+
+```bash
+git checkout staging
+git merge feat/add-docker-support-pr
+git merge feat/sanitize-prompt-injection-pr
+git push origin staging
+```
+
+**Flow:**
+```
+feat/* → feat/*-pr → PR → staging → (sync) → develop → main
+```
+
+**Warning:** Only merge to staging features that are ready to be used/tested internally. Staging should generally stay deployable.
+
 ### Cleanup After Merge
 
 ```bash
