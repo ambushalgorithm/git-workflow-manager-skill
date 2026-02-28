@@ -115,9 +115,8 @@ export async function createPRBranch(name: string, fromBranch?: string): Promise
     }
   }
   
-  // Determine parent branch
-  const hierarchy = config.hierarchy || { integration: 'integration', develop: 'develop' };
-  const parentBranch = hierarchy.integration || 'integration';
+  // Determine parent branch - always use staging for PR branches
+  const parentBranch = 'staging';
   
   // Create branch from parent
   if (!(await branchExists(parentBranch))) {
@@ -140,7 +139,7 @@ export async function createPRBranch(name: string, fromBranch?: string): Promise
       console.error(`  ✗ Failed to cherry-pick ${commit.slice(0, 7)}: ${error.message}`);
       // Abort cherry-pick and cleanup
       await git(['cherry-pick', '--abort']);
-      await git(['checkout', hierarchy.develop || 'develop']);
+      await git(['checkout', 'develop']);
       await git(['branch', '-D', prBranchName]);
       throw new Error(`Cherry-pick failed for commit ${commit.slice(0, 7)}. Resolve conflicts and try again.`);
     }
@@ -174,7 +173,7 @@ export async function updatePRBranch(name: string): Promise<void> {
   await checkout(prBranchName);
   
   // Get commits already in PR branch
-  const existingCommits = await git(['log', '--format=%h', `${prBranchName} ^${config.hierarchy?.integration || 'integration'}`]);
+  const existingCommits = await git(['log', '--format=%h', `${prBranchName} ^staging`]);
   const existingHashes = existingCommits.trim().split('\n').filter(Boolean);
   
   // Find new pr-ready commits
@@ -271,11 +270,6 @@ export async function generatePRTemplate(): Promise<string> {
  * Uses the current working branch (not the PR branch)
  */
 export async function generatePRDescription(branchName: string): Promise<string> {
-  // Get commits from the working branch (feature branch), not the PR branch
-  // The branchName is the PR branch name, but we need the working branch commits
-  const config = await loadConfig() as WorkflowConfig;
-  const hierarchy = config.hierarchy || { integration: 'integration', develop: 'develop', main: 'main' };
-  
   // PRs always target staging
   const baseBranch = 'staging';
   

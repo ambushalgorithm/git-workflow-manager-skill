@@ -10,7 +10,7 @@ jest.mock('../../src/lib/repo', () => ({
 
 import * as gitModule from '../../src/lib/git';
 import * as repoModule from '../../src/lib/repo';
-import { tagCommit, listPRReadyCommits, listInternalOnlyCommits, listAllTrackedCommits, showStagingIntegrationDiff, storeCommitMetadata, getCommitInfo, removeCommitFromTracking, updateCommitStatus, tagCommitMessage } from '../../src/lib/commits';
+import { tagCommit, listPRReadyCommits, listInternalOnlyCommits, listAllTrackedCommits, showStagingDevelopDiff, storeCommitMetadata, getCommitInfo, removeCommitFromTracking, updateCommitStatus, tagCommitMessage } from '../../src/lib/commits';
 
 describe('Commit Tracking', () => {
   beforeEach(() => {
@@ -108,19 +108,19 @@ describe('Commit Tracking', () => {
     });
   });
 
-  describe('showStagingIntegrationDiff', () => {
-    it('should return diff between staging and integration', async () => {
+  describe('showStagingDevelopDiff', () => {
+    it('should return diff between staging and develop', async () => {
       (gitModule.git as jest.Mock).mockResolvedValue('commit 1\n\nfile1.txt\nfile2.txt');
 
-      const diff = await showStagingIntegrationDiff();
+      const diff = await showStagingDevelopDiff();
       expect(diff).toContain('commit 1');
     });
 
     it('should return message when no differences', async () => {
       (gitModule.git as jest.Mock).mockResolvedValue('');
 
-      const diff = await showStagingIntegrationDiff();
-      expect(diff).toBe('No differences between staging and integration');
+      const diff = await showStagingDevelopDiff();
+      expect(diff).toBe('No differences between staging and develop');
     });
   });
 });
@@ -156,11 +156,11 @@ describe('Additional Commit Tests', () => {
     expect(savedConfig.tracking.commits[0].status).toBe('pr-ready');
   });
 
-  it('showStagingIntegrationDiff should call git log', async () => {
+  it('showStagingDevelopDiff should call git log', async () => {
     (gitModule.git as jest.Mock).mockResolvedValue('commit abc\n\nfile1.txt');
 
-    const diff = await showStagingIntegrationDiff();
-    expect(gitModule.git).toHaveBeenCalledWith(['log', 'staging..integration', '--oneline', '--name-only']);
+    const diff = await showStagingDevelopDiff();
+    expect(gitModule.git).toHaveBeenCalledWith(['log', 'staging..develop', '--oneline', '--name-only']);
   });
 
   it('listPRReadyCommits should call git for file list', async () => {

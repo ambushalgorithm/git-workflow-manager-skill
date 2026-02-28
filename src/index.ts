@@ -6,7 +6,7 @@ import { initWorkflow, detectRepoType, loadConfig } from './lib/repo'
 import { syncMaster, abortRebase, continueRebase, isInRebase } from './lib/sync'
 import { createFeatureBranch, createHotfixBranch, createReleaseBranch, deleteBranch, mergeBranch } from './lib/create'
 import { rebaseOnto } from './lib/rebase'
-import { tagCommit, listPRReadyCommits, listInternalOnlyCommits, listAllTrackedCommits, showStagingIntegrationDiff, removeCommitFromTracking, getCommitInfo } from './lib/commits'
+import { tagCommit, listPRReadyCommits, listInternalOnlyCommits, listAllTrackedCommits, showStagingDevelopDiff, removeCommitFromTracking, getCommitInfo } from './lib/commits'
 import { runDailyCheck, generateDailyReport, formatDailyReport, listOpenPRs, checkUpstreamStatus, reportBlockers, showBranchesNeedingAttention, detectNewUpstreamCommits, type ListPROptions } from './lib/daily'
 import { getMergeStrategy, setMergeStrategy, rebaseBranch, mergeBranchInto, hasConflicts, abortOperation, getBranchUpdateType, smartUpdate, fastForward, updateChildBranches } from './lib/updates'
 import { createPRBranch, updatePRBranch, listPRBranches, createPR, syncFromPR } from './lib/pr-branch'
@@ -276,10 +276,10 @@ program
     }
   })
 
-// Show diff between staging and integration
+// Show diff between staging and develop
 program
   .command('diff')
-  .description('Show diff between staging and integration')
+  .description('Show diff between staging and develop')
   .action(async () => {
     const config = await loadConfig()
     
@@ -289,7 +289,7 @@ program
     }
 
     try {
-      const diff = await showStagingIntegrationDiff()
+      const diff = await showStagingDevelopDiff()
       console.log(diff)
     } catch (error: any) {
       console.error('Error:', error.message)

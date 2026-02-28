@@ -83,7 +83,7 @@ describe('createBranchHierarchy', () => {
     jest.clearAllMocks();
   });
 
-  it('should create staging, integration, develop branches', async () => {
+  it('should create staging, develop branches', async () => {
     (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('main');
     (gitModule.branchExists as jest.Mock).mockResolvedValue(false);
     (gitModule.git as jest.Mock).mockResolvedValue('');
@@ -93,8 +93,7 @@ describe('createBranchHierarchy', () => {
 
     // Should have called createBranchFrom for each branch
     expect(gitModule.createBranchFrom).toHaveBeenCalledWith('main', 'staging');
-    expect(gitModule.createBranchFrom).toHaveBeenCalledWith('staging', 'integration');
-    expect(gitModule.createBranchFrom).toHaveBeenCalledWith('integration', 'develop');
+    expect(gitModule.createBranchFrom).toHaveBeenCalledWith('staging', 'develop');
   });
 
   it('should skip branches that already exist', async () => {
@@ -102,7 +101,6 @@ describe('createBranchHierarchy', () => {
     // First branch exists, others don't
     (gitModule.branchExists as jest.Mock)
       .mockResolvedValueOnce(true)   // staging exists
-      .mockResolvedValueOnce(false)  // integration doesn't
       .mockResolvedValueOnce(false); // develop doesn't
 
     await createBranchHierarchy('internal', 'main');

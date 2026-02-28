@@ -283,9 +283,7 @@ export async function getBranchStatus(baseBranch: string = 'develop'): Promise<B
           branch === 'master' || 
           branch === 'develop' || 
           branch === 'staging' || 
-          branch === 'integration' ||
           branch.startsWith('staging-') ||
-          branch.startsWith('integration-') ||
           branch.endsWith('-pr')) {
         continue;
       }

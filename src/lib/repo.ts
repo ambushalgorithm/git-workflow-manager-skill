@@ -106,8 +106,7 @@ export async function initWorkflow(force?: boolean): Promise<WorkflowConfig> {
 }
 
 /**
- * Create branch hierarchy (staging, integration, develop)
- * REPO-003
+ * Create branch hierarchy (staging, develop)
  */
 export async function createBranchHierarchy(repoType: RepoType, mainBranch: string): Promise<void> {
   const hierarchy = DEFAULT_BRANCH_HIERARCHY
@@ -125,19 +124,10 @@ export async function createBranchHierarchy(repoType: RepoType, mainBranch: stri
       console.log(`Created and pushed ${hierarchy.staging}`)
     }
 
-    // Create integration branch from staging
-    if (!(await git.branchExists(hierarchy.integration))) {
-      await git.checkout(hierarchy.staging)
-      await git.createBranchFrom(hierarchy.staging, hierarchy.integration)
-      await git.createEmptyCommit(`chore: Initialize ${hierarchy.integration} branch`)
-      await git.pushBranch(hierarchy.integration)
-      console.log(`Created and pushed ${hierarchy.integration}`)
-    }
-
-    // Create develop branch from integration
+    // Create develop branch from staging
     if (!(await git.branchExists(hierarchy.develop))) {
-      await git.checkout(hierarchy.integration)
-      await git.createBranchFrom(hierarchy.integration, hierarchy.develop)
+      await git.checkout(hierarchy.staging)
+      await git.createBranchFrom(hierarchy.staging, hierarchy.develop)
       await git.createEmptyCommit(`chore: Initialize ${hierarchy.develop} branch`)
       await git.pushBranch(hierarchy.develop)
       console.log(`Created and pushed ${hierarchy.develop}`)

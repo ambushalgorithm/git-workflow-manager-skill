@@ -151,19 +151,18 @@ export async function listInternalOnlyCommits(): Promise<any[]> {
 }
 
 /**
- * Show diff between staging and integration branches
- * COMMIT-005
+ * Show diff between staging and develop branches
  */
-export async function showStagingIntegrationDiff(): Promise<string> {
-  // Get commits in integration but not in staging
+export async function showStagingDevelopDiff(): Promise<string> {
+  // Get commits in develop but not in staging
   const diff = await git([
     'log', 
-    'staging..integration', 
+    'staging..develop', 
     '--oneline', 
     '--name-only'
   ]);
 
-  return diff || 'No differences between staging and integration';
+  return diff || 'No differences between staging and develop';
 }
 
 /**
