@@ -24,8 +24,19 @@ export async function syncStaging(config: WorkflowConfig, force = false): Promis
     // May fail if no tracking, continue anyway
   }
   
-  // Rebase onto origin/main (not local main)
-  console.log(`Rebasing staging onto origin/${defaultBranch}...`);
+  // Check if staging needs to be rebased onto main
+  // Count commits between staging and origin/main
+  const revList = await git(['rev-list', '--count', 'staging..origin/main']);
+  const commitsBehind = parseInt(revList.trim(), 10) || 0;
+  
+  if (commitsBehind === 0) {
+    console.log('Staging is already up to date with main. Nothing to sync.');
+    return;
+  }
+  
+  console.log(`Staging is ${commitsBehind} commit(s) behind main. Rebasing...`);
+  
+  // Rebase onto origin/main
   try {
     await git(['rebase', `origin/${defaultBranch}`]);
   } catch (error) {
@@ -60,8 +71,18 @@ export async function syncDevelop(config: WorkflowConfig, force = false): Promis
     // May fail if no tracking, continue anyway
   }
   
-  // Rebase onto origin/staging (not local staging)
-  console.log('Rebasing develop onto origin/staging...');
+  // Check if develop needs to be rebased onto staging
+  const revList = await git(['rev-list', '--count', 'develop..origin/staging']);
+  const commitsBehind = parseInt(revList.trim(), 10) || 0;
+  
+  if (commitsBehind === 0) {
+    console.log('Develop is already up to date with staging. Nothing to sync.');
+    return;
+  }
+  
+  console.log(`Develop is ${commitsBehind} commit(s) behind staging. Rebasing...`);
+  
+  // Rebase onto origin/staging
   try {
     await git(['rebase', 'origin/staging']);
   } catch (error) {
