@@ -149,7 +149,7 @@ export async function listOpenPRs(options: ListPROptions = {}): Promise<PRInfo[]
       baseBranch: pr.baseRefName,
       url: pr.url,
       mergeable: pr.mergeable !== false,
-      checksPassing: pr.statusCheckRollup?.some((c: any) => c.state === 'SUCCESS') ?? true,
+      checksPassing: !pr.statusCheckRollup?.length || pr.statusCheckRollup.some((c: any) => c.state === 'SUCCESS'),
     }));
   } catch (error: any) {
     // If not in a GitHub repo, return empty
