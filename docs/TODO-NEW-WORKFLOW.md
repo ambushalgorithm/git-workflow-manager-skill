@@ -171,4 +171,52 @@ docker run --rm git-workflow-test npm test -- --coverage
 
 ---
 
+## PR Workflow
+
+### Branch Hierarchy
+```
+master (production)
+  ↑
+staging (main working branch - ALL changes go here)
+  ↑
+develop (rebased working base)
+  ↑
+feat/*
+```
+
+### PR Flow
+All PRs target `staging`. Master is updated via PRs from staging or release branches.
+
+```
+feat/* → PR → staging → PR → master
+                ↑
+          release/* → PR → master
+```
+
+### Commands
+```bash
+# Work on feature
+git-workflow create feat my-feature
+git-workflow pr-branch create my-feature
+git-workflow pr create my-feature
+# Auto-targets staging
+
+# After PR merges, update develop
+git-workflow rebase develop staging
+
+# To update master (from staging)
+gh pr create --base master --head staging
+
+# Or from release branch
+gh pr create --base master --head release/1.0.0
+```
+
+### Fork vs Internal
+The only difference is the sync step:
+
+- **Fork:** `git-workflow sync master` (sync from upstream) → `git-workflow rebase develop master`
+- **Internal:** Just `git-workflow rebase develop master` (no upstream)
+
+---
+
 *Created: 2026-02-27*
