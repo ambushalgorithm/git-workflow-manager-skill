@@ -31,7 +31,12 @@ describe('Sync with Config', () => {
     
     (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('develop');
     (gitModule.fetchAll as jest.Mock).mockResolvedValue(undefined);
-    (gitModule.git as jest.Mock).mockResolvedValue('');
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('')  // checkout staging
+      .mockResolvedValueOnce('')  // pull
+      .mockResolvedValueOnce('3') // rev-list
+      .mockResolvedValueOnce('')  // rebase
+      .mockResolvedValueOnce(''); // push
     (gitModule.pushBranch as jest.Mock).mockResolvedValue(undefined);
 
     await syncStaging(config);

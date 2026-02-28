@@ -30,7 +30,12 @@ describe('Sync Operations', () => {
       
       (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('develop');
       (gitModule.fetchAll as jest.Mock).mockResolvedValue(undefined);
-      (gitModule.git as jest.Mock).mockResolvedValue('');
+      (gitModule.git as jest.Mock)
+        .mockResolvedValueOnce('')  // checkout staging
+        .mockResolvedValueOnce('')  // pull
+        .mockResolvedValueOnce('3') // rev-list (3 commits behind)
+        .mockResolvedValueOnce('')  // rebase
+        .mockResolvedValueOnce(''); // push
       (gitModule.pushBranch as jest.Mock).mockResolvedValue(undefined);
 
       await syncStaging(config);
@@ -89,7 +94,12 @@ describe('Sync Operations', () => {
       
       (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('main');
       (gitModule.fetchAll as jest.Mock).mockResolvedValue(undefined);
-      (gitModule.git as jest.Mock).mockResolvedValue('');
+      (gitModule.git as jest.Mock)
+        .mockResolvedValueOnce('')  // checkout develop
+        .mockResolvedValueOnce('')  // pull
+        .mockResolvedValueOnce('5') // rev-list (5 commits behind)
+        .mockResolvedValueOnce('')  // rebase
+        .mockResolvedValueOnce(''); // push
       (gitModule.pushBranch as jest.Mock).mockResolvedValue(undefined);
 
       await syncDevelop(config);
@@ -146,7 +156,19 @@ describe('Sync Operations', () => {
       
       (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('main');
       (gitModule.fetchAll as jest.Mock).mockResolvedValue(undefined);
-      (gitModule.git as jest.Mock).mockResolvedValue('');
+      // syncStaging: checkout, pull, rev-list, rebase, push
+      // syncDevelop: checkout, pull, rev-list, rebase, push
+      (gitModule.git as jest.Mock)
+        .mockResolvedValueOnce('')  // checkout staging
+        .mockResolvedValueOnce('')  // pull staging
+        .mockResolvedValueOnce('3') // rev-list staging
+        .mockResolvedValueOnce('')  // rebase staging
+        .mockResolvedValueOnce('')  // push staging
+        .mockResolvedValueOnce('')  // checkout develop
+        .mockResolvedValueOnce('')  // pull develop
+        .mockResolvedValueOnce('5') // rev-list develop
+        .mockResolvedValueOnce('')  // rebase develop
+        .mockResolvedValueOnce('');  // push develop
       (gitModule.pushBranch as jest.Mock).mockResolvedValue(undefined);
 
       await syncAll(config);
@@ -227,12 +249,16 @@ describe('Force push', () => {
     
     (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('develop');
     (gitModule.fetchAll as jest.Mock).mockResolvedValue(undefined);
-    (gitModule.git as jest.Mock).mockResolvedValue('');
-    (gitModule.pushBranch as jest.Mock).mockResolvedValue(undefined);
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('')  // checkout
+      .mockResolvedValueOnce('')  // pull
+      .mockResolvedValueOnce('3') // rev-list
+      .mockResolvedValueOnce('')  // rebase
+      .mockResolvedValueOnce(''); // push -f
 
     await syncStaging(config, true);
 
-    expect(gitModule.pushBranch).toHaveBeenCalledWith('staging');
+    expect(gitModule.git).toHaveBeenCalledWith(['push', '-f', 'origin', 'staging']);
   });
 
   it('syncDevelop with force pushes', async () => {
@@ -240,12 +266,16 @@ describe('Force push', () => {
     
     (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('main');
     (gitModule.fetchAll as jest.Mock).mockResolvedValue(undefined);
-    (gitModule.git as jest.Mock).mockResolvedValue('');
-    (gitModule.pushBranch as jest.Mock).mockResolvedValue(undefined);
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('')  // checkout
+      .mockResolvedValueOnce('')  // pull
+      .mockResolvedValueOnce('5') // rev-list
+      .mockResolvedValueOnce('')  // rebase
+      .mockResolvedValueOnce(''); // push -f
 
     await syncDevelop(config, true);
 
-    expect(gitModule.pushBranch).toHaveBeenCalledWith('develop');
+    expect(gitModule.git).toHaveBeenCalledWith(['push', '-f', 'origin', 'develop']);
   });
 });
 
