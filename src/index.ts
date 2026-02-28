@@ -3,7 +3,7 @@
 import { Command } from 'commander'
 import { git, getCurrentBranch, branchExists } from './lib/git'
 import { initWorkflow, detectRepoType, loadConfig } from './lib/repo'
-import { syncStaging, syncDevelop, syncAll } from './lib/sync'
+import { syncMaster, abortRebase, continueRebase, isInRebase } from './lib/sync'
 import { createFeatureBranch, createHotfixBranch, createReleaseBranch, deleteBranch, mergeBranch } from './lib/create'
 import { rebaseOnto } from './lib/rebase'
 import { tagCommit, listPRReadyCommits, listInternalOnlyCommits, listAllTrackedCommits, showStagingIntegrationDiff, removeCommitFromTracking, getCommitInfo } from './lib/commits'
@@ -49,34 +49,12 @@ program
 // Sync command
 program
   .command('sync')
-  .description('Sync branches in the workflow hierarchy')
-  .argument('[branch]', 'Branch to sync (staging, develop, all)', 'all')
-  .option('-f, --force', 'Force push after sync')
-  .action(async (branch, options) => {
-    const config = await loadConfig()
-    
-    if (!config) {
-      console.error('Error: Not a git-workflow managed repository. Run "git-workflow init" first.')
-      process.exit(1)
-    }
-
+  .description('Sync local master with upstream (fork only)')
+  .action(async () => {
     try {
-      switch (branch) {
-        case 'staging':
-          await syncStaging(config, options.force)
-          break
-        case 'develop':
-          await syncDevelop(config, options.force)
-          break
-        case 'all':
-          await syncAll(config, options.force)
-          break
-        default:
-          console.error(`Unknown branch: ${branch}. Use: staging, develop, or all`)
-          process.exit(1)
-      }
+      await syncMaster();
     } catch (error: any) {
-      console.error('Sync failed:', error.message)
+      console.error('Error:', error.message)
       process.exit(1)
     }
   })
@@ -125,12 +103,13 @@ program
 // Rebase command
 program
   .command('rebase')
-  .description('Rebase current branch onto parent')
-  .argument('[parent]', 'Parent branch to rebase onto', 'develop')
+  .description('Rebase a branch onto a target (e.g., git-workflow rebase develop staging)')
+  .argument('[branch]', 'Branch to rebase (default: current branch)')
+  .argument('[target]', 'Target branch to rebase onto')
   .option('--continue', 'Continue after resolving conflicts')
   .option('--abort', 'Abort current rebase')
   .option('--skip', 'Skip current commit')
-  .action(async (parent, options) => {
+  .action(async (branch, target, options) => {
     const config = await loadConfig()
     
     if (!config) {
@@ -157,8 +136,14 @@ program
         return
       }
       
-      await rebaseOnto(config, 'rebase', parent)
-      console.log(`Rebased onto ${parent}`)
+      if (!target) {
+        console.error('Error: Requires two arguments: <branch> <target>')
+        console.error('Example: git-workflow rebase develop staging')
+        process.exit(1)
+      }
+      
+      await rebaseOnto(config, 'rebase', target, branch)
+      console.log(`Rebased ${branch || 'current branch'} onto ${target}`)
     } catch (error: any) {
       console.error('Rebase failed:', error.message)
       process.exit(1)

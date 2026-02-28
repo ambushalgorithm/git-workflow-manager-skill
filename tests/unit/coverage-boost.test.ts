@@ -10,38 +10,34 @@ jest.mock('../../src/lib/git', () => ({
 }));
 
 import * as gitModule from '../../src/lib/git';
-import { syncStaging, syncDevelop, syncAll } from '../../src/lib/sync';
+import { syncMaster } from '../../src/lib/sync';
 import { rebaseOnto } from '../../src/lib/rebase';
 
-// Test sync with defaultBranch config
-describe('Sync with Config', () => {
-  const createConfigWithBranch = (branch: string) => ({
-    repoType: 'internal' as const,
-    defaultBranch: branch,
-    createdAt: new Date().toISOString(),
-    branchPrefixes: { feature: 'feat/', hotfix: 'hotfix/', release: 'release/' }
-  });
-
+// Test syncMaster with different scenarios
+describe('Sync Master Coverage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('syncStaging should use config.defaultBranch', async () => {
-    const config = createConfigWithBranch('main');
-    
+  it('syncMaster should handle pull errors gracefully', async () => {
     (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('develop');
-    (gitModule.fetchAll as jest.Mock).mockResolvedValue(undefined);
     (gitModule.git as jest.Mock)
-      .mockResolvedValueOnce('')  // checkout staging
-      .mockResolvedValueOnce('')  // pull
-      .mockResolvedValueOnce('3') // rev-list
-      .mockResolvedValueOnce('')  // rebase
-      .mockResolvedValueOnce(''); // push
-    (gitModule.pushBranch as jest.Mock).mockResolvedValue(undefined);
+      .mockResolvedValueOnce('https://github.com/upstream/repo.git')  // upstream exists
+      .mockResolvedValueOnce('')  // checkout master
+      .mockRejectedValueOnce(new Error('pull failed'));  // pull fails
 
-    await syncStaging(config);
+    await expect(syncMaster()).rejects.toThrow('pull failed');
+  });
 
-    expect(gitModule.git).toHaveBeenCalledWith(['rebase', 'origin/main']);
+  it('syncMaster should handle push errors gracefully', async () => {
+    (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('develop');
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('https://github.com/upstream/repo.git')  // upstream exists
+      .mockResolvedValueOnce('')  // checkout master
+      .mockResolvedValueOnce('')  // pull upstream master
+      .mockRejectedValueOnce(new Error('push failed'));  // push fails
+
+    await expect(syncMaster()).rejects.toThrow('push failed');
   });
 });
 
@@ -63,7 +59,7 @@ describe('Rebase Conflict Handling', () => {
     const error = new Error('conflict');
     
     (gitModule.getBranches as jest.Mock).mockResolvedValue([
-      { name: 'main', current: false },
+      { name: 'staging', current: false },
       { name: 'develop', current: true },
     ]);
     (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('feat/test');
@@ -71,6 +67,25 @@ describe('Rebase Conflict Handling', () => {
     (gitModule.git as jest.Mock).mockRejectedValue(error);
 
     // Should throw the error
-    await expect(rebaseOnto(config, 'rebase', 'develop')).rejects.toThrow('conflict');
+    await expect(rebaseOnto(config, 'rebase', 'staging')).rejects.toThrow('conflict');
+  });
+
+  it('rebaseOnto should checkout specified branch before rebasing', async () => {
+    const config = createConfig();
+    
+    (gitModule.getBranches as jest.Mock).mockResolvedValue([
+      { name: 'staging', current: false },
+      { name: 'develop', current: false },
+      { name: 'feat/test', current: false },
+    ]);
+    (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('develop');
+    (gitModule.fetchAll as jest.Mock).mockResolvedValue(undefined);
+    (gitModule.git as jest.Mock).mockResolvedValue('');
+
+    await rebaseOnto(config, 'rebase', 'staging', 'feat/test');
+
+    // Should checkout feat/test before rebasing
+    expect(gitModule.git).toHaveBeenCalledWith(['checkout', 'feat/test']);
+    expect(gitModule.git).toHaveBeenCalledWith(['rebase', 'staging']);
   });
 });

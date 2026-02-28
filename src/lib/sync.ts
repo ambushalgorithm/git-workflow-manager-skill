@@ -1,118 +1,52 @@
-import { git, getCurrentBranch, getBranches, branchExists, pushBranch, fetchAll } from './git';
-import type { WorkflowConfig } from '../types';
+import { git, getCurrentBranch, fetchAll } from './git';
 
 /**
- * Sync staging branch - rebase onto master
+ * Check if repository is a fork (has upstream remote)
  */
-export async function syncStaging(config: WorkflowConfig, force = false): Promise<void> {
-  const defaultBranch = config.defaultBranch || 'master';
-  
-  // Fetch latest
-  await fetchAll();
-  
-  // Checkout staging
-  const currentBranch = await getCurrentBranch();
-  if (currentBranch !== 'staging') {
-    await git(['checkout', 'staging']);
-  }
-  
-  // Pull latest staging first (in case it was updated via GitHub)
-  console.log('Pulling latest staging...');
+export async function isFork(): Promise<boolean> {
   try {
-    await git(['pull', '--rebase', 'origin', 'staging']);
+    await git(['remote', 'get-url', 'upstream']);
+    return true;
   } catch {
-    // May fail if no tracking, continue anyway
+    return false;
   }
-  
-  // Check if staging needs to be rebased onto main
-  // Count commits between staging and origin/main
-  const revList = await git(['rev-list', '--count', 'staging..origin/main']);
-  const commitsBehind = parseInt(revList.trim(), 10) || 0;
-  
-  if (commitsBehind === 0) {
-    console.log('Staging is already up to date with main. Nothing to sync.');
-    return;
-  }
-  
-  console.log(`Staging is ${commitsBehind} commit(s) behind main. Rebasing...`);
-  
-  // Rebase onto origin/main
-  try {
-    await git(['rebase', `origin/${defaultBranch}`]);
-  } catch (error) {
-    console.error('Rebase conflict detected. Resolve conflicts and run: git-workflow rebase --continue');
-    throw error;
-  }
-  
-  // Push (force push needed after rebase)
-  console.log('Pushing to origin (force push)...');
-  await git(['push', '-f', 'origin', 'staging']);
-  console.log(`Staging synced with ${defaultBranch}`);
 }
 
 /**
- * Sync develop branch - rebase onto staging
+ * Sync local master from upstream (fork only)
  */
-export async function syncDevelop(config: WorkflowConfig, force = false): Promise<void> {
-  // Fetch latest
+export async function syncMaster(): Promise<void> {
+  const fork = await isFork();
+  
+  if (!fork) {
+    throw new Error('No upstream remote found. This command is only for forks.');
+  }
+  
+  // Fetch from all remotes
+  console.log('Fetching all remotes...');
   await fetchAll();
   
-  // Checkout develop
+  // Checkout master
   const currentBranch = await getCurrentBranch();
-  if (currentBranch !== 'develop') {
-    await git(['checkout', 'develop']);
+  if (currentBranch !== 'master') {
+    console.log('Checking out master...');
+    await git(['checkout', 'master']);
   }
   
-  // Pull latest staging first (in case it was updated via GitHub)
-  console.log('Pulling latest staging...');
+  // Pull from upstream/master
+  console.log('Pulling from upstream/master...');
   try {
-    await git(['pull', '--rebase', 'origin', 'staging']);
-  } catch {
-    // May fail if no tracking, continue anyway
-  }
-  
-  // Check if develop needs to be rebased onto staging
-  const revList = await git(['rev-list', '--count', 'develop..origin/staging']);
-  const commitsBehind = parseInt(revList.trim(), 10) || 0;
-  
-  if (commitsBehind === 0) {
-    console.log('Develop is already up to date with staging. Nothing to sync.');
-    return;
-  }
-  
-  console.log(`Develop is ${commitsBehind} commit(s) behind staging. Rebasing...`);
-  
-  // Rebase onto origin/staging
-  try {
-    await git(['rebase', 'origin/staging']);
+    await git(['pull', 'upstream', 'master']);
   } catch (error) {
-    console.error('Rebase conflict detected. Resolve conflicts and run: git-workflow rebase --continue');
+    console.error('Pull failed. You may need to resolve conflicts manually.');
     throw error;
   }
   
-  // Push (force push needed after rebase)
-  console.log('Pushing to origin (force push)...');
-  await git(['push', '-f', 'origin', 'develop']);
-  console.log('Develop synced with staging');
-}
-
-/**
- * Sync all branches in hierarchy order
- */
-export async function syncAll(config: WorkflowConfig, force = false): Promise<void> {
-  const defaultBranch = config.defaultBranch || 'master';
+  // Push to origin
+  console.log('Pushing to origin/master...');
+  await git(['push', 'origin', 'master']);
   
-  console.log('=== Syncing All Branches ===');
-  
-  // First sync staging onto master
-  console.log(`\n[1/2] Syncing staging...`);
-  await syncStaging(config, force);
-  
-  // Then sync develop onto staging
-  console.log(`\n[2/2] Syncing develop...`);
-  await syncDevelop(config, force);
-  
-  console.log('\n=== All branches synced ===');
+  console.log('Master synced with upstream.');
 }
 
 /**

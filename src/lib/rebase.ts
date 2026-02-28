@@ -4,12 +4,13 @@ import type { WorkflowConfig } from '../types';
 export type RebaseAction = 'rebase' | 'abort' | 'continue' | 'skip';
 
 /**
- * Rebase current branch onto another branch
+ * Rebase a branch onto another branch
  */
 export async function rebaseOnto(
   config: WorkflowConfig, 
   action: RebaseAction,
-  ontoBranch?: string
+  ontoBranch?: string,
+  branch?: string
 ): Promise<void> {
   if (action === 'abort') {
     await git(['rebase', '--abort']);
@@ -30,18 +31,24 @@ export async function rebaseOnto(
     throw new Error('Target branch required for rebase');
   }
   
+  // Fetch latest
+  await fetchAll();
+  
+  // Get current branch if not specified
+  const currentBranch = branch || await getCurrentBranch();
+  
+  // If specified branch is different from current, checkout to it
+  if (branch && branch !== await getCurrentBranch()) {
+    console.log(`Checking out ${branch}...`);
+    await git(['checkout', branch]);
+  }
+  
   // Verify target exists
   const branches = await getBranches();
   const branchNames = branches.map(b => b.name);
   if (!branchNames.includes(ontoBranch)) {
     throw new Error(`Target branch '${ontoBranch}' does not exist`);
   }
-  
-  // Fetch latest
-  await fetchAll();
-  
-  // Get current branch
-  const currentBranch = await getCurrentBranch();
   
   // Rebase
   console.log(`Rebasing ${currentBranch} onto ${ontoBranch}...`);

@@ -66,23 +66,9 @@ export async function isFork(): Promise<boolean> {
  */
 export async function getPRTarget(): Promise<{ owner: string; repo: string; baseBranch: string }> {
   const fork = await isFork();
-  const config = await loadConfig() as WorkflowConfig;
   
-  // Use configured base branch or auto-detect
-  const configuredBase = config.defaultBaseBranch;
-  
-  // Auto-detect default branch from origin if not configured
-  let autoDetectedBase = 'main';
-  if (!configuredBase) {
-    try {
-      const ref = await git(['symbolic-ref', 'refs/remotes/origin/HEAD']);
-      autoDetectedBase = ref.replace('refs/remotes/origin/', '').trim();
-    } catch {
-      autoDetectedBase = 'main';
-    }
-  }
-  
-  const baseBranch = configuredBase || autoDetectedBase;
+  // All PRs target staging
+  const baseBranch = 'staging';
   
   if (fork) {
     // Get upstream info
@@ -290,16 +276,8 @@ export async function generatePRDescription(branchName: string): Promise<string>
   const config = await loadConfig() as WorkflowConfig;
   const hierarchy = config.hierarchy || { integration: 'integration', develop: 'develop', main: 'main' };
   
-  // Use configured baseBranch or get from target
-  let baseBranch = config.defaultBaseBranch;
-  if (!baseBranch) {
-    try {
-      const ref = await git(['symbolic-ref', 'refs/remotes/origin/HEAD']);
-      baseBranch = ref.replace('refs/remotes/origin/', '').trim();
-    } catch {
-      baseBranch = hierarchy.main || 'main';
-    }
-  }
+  // PRs always target staging
+  const baseBranch = 'staging';
   
   // Get current working branch (the feature branch)
   const workingBranch = await getCurrentBranch();
