@@ -277,8 +277,16 @@ export async function getBranchStatus(baseBranch: string = 'develop'): Promise<B
 
     for (const line of lines) {
       const [branch, date] = line.split(' ');
-      // Skip protected branches and PR branches (*-pr)
-      if (!branch || branch === 'main' || branch === 'master' || branch === 'develop' || branch === 'staging' || branch === 'integration' || branch.endsWith('-pr')) {
+      // Skip protected branches and PR branches (*-pr), feature/* branches
+      if (!branch || 
+          branch === 'main' || 
+          branch === 'master' || 
+          branch === 'develop' || 
+          branch === 'staging' || 
+          branch === 'integration' ||
+          branch.startsWith('staging-') ||
+          branch.startsWith('integration-') ||
+          branch.endsWith('-pr')) {
         continue;
       }
 
