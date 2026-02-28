@@ -74,4 +74,78 @@ git-workflow rebase develop staging
 
 ---
 
+## Testing
+
+### Running Tests on QA1
+
+**⚠️ NEVER run tests locally - always run in Docker on QA1**
+
+All tests run in Docker for isolation and consistency.
+
+**Full workflow:**
+
+1. **Check if repo exists on QA1:**
+   ```bash
+   ssh deploy@100.75.20.121 "ls ~/Projects/openclaw-skills-development/git-workflow-manager"
+   ```
+   - If missing: clone from `git@github.com-ambushalgorithm:ambushalgorithm/git-workflow-manager-skill.git`
+
+2. **Commit & push local changes** (from this machine)
+
+3. **On QA1 - Build & Run:**
+   ```bash
+   cd ~/Projects/openclaw-skills-development/git-workflow-manager
+   git pull
+   
+   # Build Docker image
+   docker build -t git-workflow-test .
+   
+   # Run unit tests with coverage
+   docker run --rm git-workflow-test
+   
+   # Or run specific test file
+   docker run --rm git-workflow-test npm test -- --testPathPattern="repo.test.ts"
+   ```
+
+4. **Review coverage** - Must hit >= 95%
+
+### E2E Testing
+
+E2E tests also run in Docker containers:
+
+1. **Fork test repo** (for fork workflow):
+   ```bash
+   gh repo fork ambushalgorithm/Git-Workflow-Manager-Test-Repo
+   ```
+
+2. **Internal test repo** (for internal workflow):
+   ```bash
+   gh repo clone ambushalgorithm/Git-Workflow-Manager-Test-Repo internal-test
+   ```
+
+3. **Run E2E in Docker:**
+   ```bash
+   # From project root
+   docker run -v $(pwd):/app -w /app node:20-alpine sh -c "\
+     apk add git && \
+     npm install && \
+     npm run build && \
+     npm test -- --testPathPattern='e2e'"
+   ```
+
+### Test Commands Summary
+
+```bash
+# Run all tests (excluding daily)
+docker run --rm git-workflow-test npm test -- --testPathIgnorePatterns="daily"
+
+# Run specific test file
+docker run --rm git-workflow-test npm test -- --testPathPattern="sync.test.ts"
+
+# Run with coverage
+docker run --rm git-workflow-test npm test -- --coverage
+```
+
+---
+
 *Created: 2026-02-27*
