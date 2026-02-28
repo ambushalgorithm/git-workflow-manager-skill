@@ -14,6 +14,8 @@ Manage complex Git branching workflows for AI agents. Handles branch lifecycle, 
 <p align="center">
   <img alt="image" src="https://github.com/user-attachments/assets/b7150c69-9471-46c0-865c-5c29cae39587" width="800"/>
   <img alt="image" src="https://github.com/user-attachments/assets/cfab9979-bd67-4990-abd8-648931f0ff87" width="800"/>
+  <img alt="image" src="https://github.com/user-attachments/assets/ae9107aa-cc7b-4ffd-9bd7-51fdb43aea47" width="800"/>
+  <img alt="image" src="https://github.com/user-attachments/assets/84c6a9fa-99d7-4a7e-bec9-2ef4225ddacd" width="800"/>
 </p>
 
 ## Branch Hierarchy
