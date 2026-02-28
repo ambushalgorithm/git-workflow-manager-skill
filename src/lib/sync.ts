@@ -33,8 +33,9 @@ export async function syncStaging(config: WorkflowConfig, force = false): Promis
     throw error;
   }
   
-  // Push
-  await pushBranch('staging');
+  // Push (force push needed after rebase)
+  console.log('Pushing to origin (force push)...');
+  await git(['push', '-f', 'origin', 'staging']);
   console.log(`Staging synced with ${defaultBranch}`);
 }
 
@@ -68,8 +69,9 @@ export async function syncDevelop(config: WorkflowConfig, force = false): Promis
     throw error;
   }
   
-  // Push
-  await pushBranch('develop');
+  // Push (force push needed after rebase)
+  console.log('Pushing to origin (force push)...');
+  await git(['push', '-f', 'origin', 'develop']);
   console.log('Develop synced with staging');
 }
 
