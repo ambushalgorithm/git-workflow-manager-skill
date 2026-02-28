@@ -16,6 +16,14 @@ export async function syncStaging(config: WorkflowConfig, force = false): Promis
     await git(['checkout', 'staging']);
   }
   
+  // Pull latest staging first (in case it was updated via GitHub)
+  console.log('Pulling latest staging...');
+  try {
+    await git(['pull', 'origin', 'staging']);
+  } catch {
+    // May fail if no tracking, continue anyway
+  }
+  
   // Rebase onto master
   console.log(`Rebasing staging onto ${defaultBranch}...`);
   try {
@@ -41,6 +49,14 @@ export async function syncDevelop(config: WorkflowConfig, force = false): Promis
   const currentBranch = await getCurrentBranch();
   if (currentBranch !== 'develop') {
     await git(['checkout', 'develop']);
+  }
+  
+  // Pull latest staging first (in case it was updated via GitHub)
+  console.log('Pulling latest staging...');
+  try {
+    await git(['pull', 'origin', 'staging']);
+  } catch {
+    // May fail if no tracking, continue anyway
   }
   
   // Rebase onto staging
