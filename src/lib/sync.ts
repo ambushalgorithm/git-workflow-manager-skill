@@ -24,10 +24,10 @@ export async function syncStaging(config: WorkflowConfig, force = false): Promis
     // May fail if no tracking, continue anyway
   }
   
-  // Rebase onto master
-  console.log(`Rebasing staging onto ${defaultBranch}...`);
+  // Rebase onto origin/main (not local main)
+  console.log(`Rebasing staging onto origin/${defaultBranch}...`);
   try {
-    await git(['rebase', defaultBranch]);
+    await git(['rebase', `origin/${defaultBranch}`]);
   } catch (error) {
     console.error('Rebase conflict detected. Resolve conflicts and run: git-workflow rebase --continue');
     throw error;
@@ -59,10 +59,10 @@ export async function syncDevelop(config: WorkflowConfig, force = false): Promis
     // May fail if no tracking, continue anyway
   }
   
-  // Rebase onto staging
-  console.log('Rebasing develop onto staging...');
+  // Rebase onto origin/staging (not local staging)
+  console.log('Rebasing develop onto origin/staging...');
   try {
-    await git(['rebase', 'staging']);
+    await git(['rebase', 'origin/staging']);
   } catch (error) {
     console.error('Rebase conflict detected. Resolve conflicts and run: git-workflow rebase --continue');
     throw error;

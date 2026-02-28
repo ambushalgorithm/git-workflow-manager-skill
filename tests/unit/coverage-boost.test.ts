@@ -36,7 +36,7 @@ describe('Sync with Config', () => {
 
     await syncStaging(config);
 
-    expect(gitModule.git).toHaveBeenCalledWith(['rebase', 'main']);
+    expect(gitModule.git).toHaveBeenCalledWith(['rebase', 'origin/main']);
   });
 });
 

@@ -37,7 +37,7 @@ describe('Sync Operations', () => {
 
       // Should have called checkout, rebase, push
       expect(gitModule.git).toHaveBeenCalledWith(['checkout', 'staging']);
-      expect(gitModule.git).toHaveBeenCalledWith(['rebase', 'master']);
+      expect(gitModule.git).toHaveBeenCalledWith(['rebase', 'origin/master']);
     });
 
     it('should call fetchAll', async () => {
@@ -95,7 +95,7 @@ describe('Sync Operations', () => {
       await syncDevelop(config);
 
       expect(gitModule.git).toHaveBeenCalledWith(['checkout', 'develop']);
-      expect(gitModule.git).toHaveBeenCalledWith(['rebase', 'staging']);
+      expect(gitModule.git).toHaveBeenCalledWith(['rebase', 'origin/staging']);
     });
 
     it('should call fetchAll', async () => {
