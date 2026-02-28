@@ -2,7 +2,7 @@
 
 import { Command } from 'commander'
 import { git, getCurrentBranch, branchExists } from './lib/git'
-import { initWorkflow, detectRepoType, loadConfig } from './lib/repo'
+import { initWorkflow, detectRepoType, loadConfig, uninitWorkflow } from './lib/repo'
 import { syncMaster, abortRebase, continueRebase, isInRebase } from './lib/sync'
 import { createFeatureBranch, createHotfixBranch, createReleaseBranch, deleteBranch, mergeBranch } from './lib/create'
 import { rebaseOnto } from './lib/rebase'
@@ -26,6 +26,34 @@ program
   .action(async (options) => {
     try {
       await initWorkflow(options.force)
+    } catch (error: any) {
+      console.error('Error:', error.message)
+      process.exit(1)
+    }
+  })
+
+// Uninit command
+program
+  .command('uninit')
+  .description('Remove workflow (delete staging/develop branches and config)')
+  .option('-y, --yes', 'Skip confirmation prompt')
+  .action(async (options) => {
+    // Show warning
+    console.log('⚠️  This will delete the staging and develop branches and remove workflow config.')
+    
+    if (!options.yes) {
+      const readline = await import('readline')
+      const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
+      const answer = await new Promise<string>(resolve => rl.question('Are you sure? (y/N): ', resolve))
+      rl.close()
+      if (answer.toLowerCase() !== 'y') {
+        console.log('Cancelled.')
+        return
+      }
+    }
+    
+    try {
+      await uninitWorkflow()
     } catch (error: any) {
       console.error('Error:', error.message)
       process.exit(1)

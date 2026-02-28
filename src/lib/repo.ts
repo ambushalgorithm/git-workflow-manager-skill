@@ -1,4 +1,6 @@
 import * as git from './git'
+import * as fs from 'fs/promises'
+import * as path from 'path'
 import { RepoType, WorkflowConfig, DEFAULT_BRANCH_HIERARCHY } from '../types'
 
 const CONFIG_FILE = '.git/workflow-config.json'
@@ -138,4 +140,54 @@ export async function createBranchHierarchy(repoType: RepoType, mainBranch: stri
       await git.checkout(currentBranch)
     }
   }
+}
+
+/**
+ * Remove workflow (delete workflow branches and config)
+ */
+export async function uninitWorkflow(): Promise<void> {
+  const config = await loadConfig()
+  
+  if (!config) {
+    console.log('No workflow config found. Nothing to uninitialize.')
+    return
+  }
+
+  // Get hierarchy branches to delete
+  const branchesToDelete = ['staging', 'develop']
+  
+  // Get current branch
+  const currentBranch = await git.getCurrentBranch()
+  
+  // Delete local and remote branches
+  for (const branch of branchesToDelete) {
+    // Delete remote branch if exists
+    try {
+      await git.git(['push', 'origin', '--delete', branch])
+      console.log(`Deleted remote branch: ${branch}`)
+    } catch {
+      // Branch may not exist on remote, that's ok
+    }
+    
+    // Delete local branch if exists
+    if (await git.branchExists(branch)) {
+      // If we're on that branch, switch to main first
+      if (currentBranch === branch) {
+        await git.checkout(config.defaultBranch)
+      }
+      await git.git(['branch', '-D', branch])
+      console.log(`Deleted local branch: ${branch}`)
+    }
+  }
+  
+  // Delete config file
+  const configPath = path.join(process.cwd(), CONFIG_FILE)
+  try {
+    await fs.unlink(configPath)
+    console.log('Deleted workflow config')
+  } catch {
+    // Config may not exist, that's ok
+  }
+  
+  console.log('Workflow uninitialized successfully!')
 }
