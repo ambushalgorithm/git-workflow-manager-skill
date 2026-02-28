@@ -22,17 +22,33 @@ origin/feat/*
 
 ---
 
-## New Sync Commands
+## New CLI Commands
 
 ```bash
-# 1. Sync local master from upstream (NEW)
-git-workflow sync master
+# Initialize workflow on a repo
+git-workflow init
 
-# 2. Rebase develop onto master (get upstream changes)
-git-workflow rebase develop master
+# Create a feature branch
+git-workflow create feat my-new-feature
 
-# 3. Rebase develop onto staging (get ALL changes)
-git-workflow rebase develop staging
+# Sync branches
+git-workflow sync master           # NEW: Sync local master from upstream
+git-workflow sync staging          # Rebase staging onto master
+git-workflow sync develop          # Rebase develop onto staging
+
+# Rebase (new syntax)
+git-workflow rebase develop master     # Rebase develop onto master (upstream changes)
+git-workflow rebase develop staging    # Rebase develop onto staging (all changes)
+
+# PR management
+git-workflow pr-branch create <name>
+git-workflow pr-branch update <name>
+git-workflow pr-branch list
+git-workflow pr create <branch>
+
+# Daily/automation
+git-workflow daily
+git-workflow status
 ```
 
 ---
@@ -51,6 +67,13 @@ git-workflow rebase develop staging
 - [ ] Allow specifying any target branch: `git-workflow rebase develop master`
 - [ ] Current: rebase onto develop by default
 - [ ] New: rebase onto any specified branch
+- [ ] Update CLI to accept parent branch argument
+
+### Phase 3: Update init Command
+
+- [ ] `git-workflow init` creates: `master`, `staging`, `develop` (no integration)
+- [ ] For forks: setup upstream remote
+- [ ] For internal: just local branches
 
 ### Phase 3: Remove integration
 
