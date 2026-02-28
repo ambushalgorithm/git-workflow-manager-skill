@@ -58,9 +58,13 @@ describe('Sync Operations', () => {
       
       (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('develop');
       (gitModule.fetchAll as jest.Mock).mockResolvedValue(undefined);
-      (gitModule.git as jest.Mock).mockRejectedValue(new Error('conflict'));
+      // checkout -> pull -> rebase throws
+      (gitModule.git as jest.Mock)
+        .mockResolvedValueOnce('')  // checkout staging
+        .mockResolvedValueOnce('')  // pull
+        .mockRejectedValueOnce(new Error('CONFLICT')); // rebase
 
-      await expect(syncStaging(config)).rejects.toThrow('conflict');
+      await expect(syncStaging(config)).rejects.toThrow('CONFLICT');
     });
 
     it('should skip checkout when already on staging', async () => {
@@ -112,9 +116,13 @@ describe('Sync Operations', () => {
       
       (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('main');
       (gitModule.fetchAll as jest.Mock).mockResolvedValue(undefined);
-      (gitModule.git as jest.Mock).mockRejectedValue(new Error('conflict'));
+      // checkout -> pull -> rebase throws
+      (gitModule.git as jest.Mock)
+        .mockResolvedValueOnce('')  // checkout
+        .mockResolvedValueOnce('')  // pull
+        .mockRejectedValueOnce(new Error('CONFLICT')); // rebase
 
-      await expect(syncDevelop(config)).rejects.toThrow('conflict');
+      await expect(syncDevelop(config)).rejects.toThrow('CONFLICT');
     });
 
     it('should skip checkout when already on develop', async () => {
@@ -326,11 +334,11 @@ describe('Rebase Conflict Handling', () => {
     
     (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('main');
     (gitModule.fetchAll as jest.Mock).mockResolvedValue(undefined);
-    // First call: checkout staging
-    // Second call: rebase -> throws
+    // checkout -> pull -> rebase throws
     (gitModule.git as jest.Mock)
       .mockResolvedValueOnce('') // checkout
-      .mockRejectedValueOnce(new Error('CONFLICT')); // rebase conflict
+      .mockResolvedValueOnce('') // pull
+      .mockRejectedValueOnce(new Error('CONFLICT')); // rebase
     
     (gitModule.pushBranch as jest.Mock).mockResolvedValue(undefined);
 
@@ -342,11 +350,11 @@ describe('Rebase Conflict Handling', () => {
     
     (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('main');
     (gitModule.fetchAll as jest.Mock).mockResolvedValue(undefined);
-    // First call: checkout develop
-    // Second call: rebase -> throws
+    // checkout -> pull -> rebase throws
     (gitModule.git as jest.Mock)
       .mockResolvedValueOnce('') // checkout
-      .mockRejectedValueOnce(new Error('CONFLICT')); // rebase conflict
+      .mockResolvedValueOnce('') // pull
+      .mockRejectedValueOnce(new Error('CONFLICT')); // rebase
     
     (gitModule.pushBranch as jest.Mock).mockResolvedValue(undefined);
 
