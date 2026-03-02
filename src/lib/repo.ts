@@ -116,23 +116,40 @@ export async function createBranchHierarchy(repoType: RepoType, mainBranch: stri
   // Get current branch to return to later
   const currentBranch = await git.getCurrentBranch()
 
+  // Fetch latest to get remote branches
+  await git.git(['fetch', 'origin'])
+
   try {
     // Create staging branch from main
     if (!(await git.branchExists(hierarchy.staging))) {
       await git.checkout(mainBranch)
-      await git.createBranchFrom(mainBranch, hierarchy.staging)
-      await git.createEmptyCommit(`chore: Initialize ${hierarchy.staging} branch`)
-      await git.pushBranch(hierarchy.staging)
-      console.log(`Created and pushed ${hierarchy.staging}`)
+      // Try to checkout from remote first, if fails create new
+      try {
+        await git.git(['checkout', '--track', `origin/${hierarchy.staging}`])
+        console.log(`Checked out existing remote branch: ${hierarchy.staging}`)
+      } catch {
+        // Branch doesn't exist remotely - create it
+        await git.createBranchFrom(mainBranch, hierarchy.staging)
+        await git.createEmptyCommit(`chore: Initialize ${hierarchy.staging} branch`)
+        await git.git(['push', '-u', 'origin', hierarchy.staging])
+        console.log(`Created and pushed ${hierarchy.staging}`)
+      }
     }
 
     // Create develop branch from staging
     if (!(await git.branchExists(hierarchy.develop))) {
       await git.checkout(hierarchy.staging)
-      await git.createBranchFrom(hierarchy.staging, hierarchy.develop)
-      await git.createEmptyCommit(`chore: Initialize ${hierarchy.develop} branch`)
-      await git.pushBranch(hierarchy.develop)
-      console.log(`Created and pushed ${hierarchy.develop}`)
+      // Try to checkout from remote first, if fails create new
+      try {
+        await git.git(['checkout', '--track', `origin/${hierarchy.develop}`])
+        console.log(`Checked out existing remote branch: ${hierarchy.develop}`)
+      } catch {
+        // Branch doesn't exist remotely - create it
+        await git.createBranchFrom(hierarchy.staging, hierarchy.develop)
+        await git.createEmptyCommit(`chore: Initialize ${hierarchy.develop} branch`)
+        await git.git(['push', '-u', 'origin', hierarchy.develop])
+        console.log(`Created and pushed ${hierarchy.develop}`)
+      }
     }
   } finally {
     // Return to original branch

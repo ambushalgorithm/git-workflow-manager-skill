@@ -83,10 +83,17 @@ describe('createBranchHierarchy', () => {
     jest.clearAllMocks();
   });
 
-  it('should create staging, develop branches', async () => {
+  it('should create staging, develop branches when they do not exist locally', async () => {
     (gitModule.getCurrentBranch as jest.Mock).mockResolvedValue('main');
+    // Branches don't exist locally
     (gitModule.branchExists as jest.Mock).mockResolvedValue(false);
-    (gitModule.git as jest.Mock).mockResolvedValue('');
+    // git fetch, then checkout --track fails (no remote), then push
+    (gitModule.git as jest.Mock)
+      .mockResolvedValueOnce('')  // fetch origin
+      .mockRejectedValueOnce({ message: 'fatal: pathspec' }) // checkout --track fails
+      .mockResolvedValueOnce('')  // push -u origin staging
+      .mockRejectedValueOnce({ message: 'fatal: pathspec' }) // checkout --track fails  
+      .mockResolvedValueOnce(''); // push -u origin develop
     (fsModule.writeFile as jest.Mock).mockResolvedValue(undefined);
 
     await createBranchHierarchy('internal', 'main');
